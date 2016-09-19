@@ -3,7 +3,7 @@
 #' Higher order methylation features for clustering and prediction in epigenomic
 #' studies
 #' @docType package
-#' @name BPRMethDevel
+#' @name BPRMeth
 #'
 #' @return BPRMeth main package documentation.
 #'

@@ -1,4 +1,4 @@
-Package: BPRMethDevel
+Package: BPRMeth
 Type: Package
 Title: Model higher-order methylation profiles
 Version: 0.99.2
