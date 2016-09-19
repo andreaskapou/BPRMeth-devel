@@ -97,7 +97,7 @@ bpr_diff_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
                              no_cores    = no_cores)
 
   # Compute fold change gene expression levels
-  y_diff <- gtools::foldchange(y$control, y$treatment)
+  y_diff <- gtools::foldchange2logratio(gtools::foldchange(y$control, y$treatment))
 
   # Concatenate coefficients from both samples
   W_diff <- cbind(out_contr_opt$W_opt, out_treat_opt$W_opt)
