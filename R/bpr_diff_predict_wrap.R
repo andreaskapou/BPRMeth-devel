@@ -7,7 +7,7 @@
 #' two learned methylation profiles are concatenated to keep all coefficients
 #' for both profiles. Then the learned parameters / coefficients of the basis
 #' functions are given as input features for performing regression in order to
-#' predict the corresponding differential gene expression levels.
+#' predict the corresponding differential (fold-change) gene expression levels.
 #'
 #' @param formula An object of class \code{\link[stats]{formula}}, e.g. see
 #'   \code{\link[stats]{lm}} function. If NULL, the simple linear regression
@@ -96,8 +96,8 @@ bpr_diff_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
                              is_parallel = is_parallel,
                              no_cores    = no_cores)
 
-  # Compute differential gene expression
-  y_diff <- y$control - y$treatment
+  # Compute fold change gene expression levels
+  y_diff <- gtools::foldchange(y$control, y$treatment)
 
   # Concatenate coefficients from both samples
   W_diff <- cbind(out_contr_opt$W_opt, out_treat_opt$W_opt)
