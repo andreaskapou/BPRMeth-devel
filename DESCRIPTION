@@ -31,8 +31,7 @@ Imports: assertthat,
     IRanges,
     S4Vectors,
     data.table,
-    graphics,
-    gtools
+    graphics
 Suggests: testthat,
     knitr,
     rmarkdown,

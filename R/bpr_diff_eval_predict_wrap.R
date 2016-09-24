@@ -1,6 +1,6 @@
 #' Predict differential gene expression from differential methylation profiles
 #'
-#' \code{bpr_diff_predict_wrap} is a function that wraps all the necessary
+#' \code{bpr_diff_eval_predict_wrap} is a function that wraps all the necessary
 #' subroutines for performing prediction of differential gene expression levels.
 #' Initially, it optimizes the parameters of the basis functions so as to learn
 #' the methylation profiles for the control and the treatment samples Then, the
@@ -56,16 +56,17 @@
 #'   \code{\link{predict_model_gex}}
 #'
 #' @export
-bpr_diff_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
-                                  w = NULL, basis = NULL, train_ind = NULL,
-                                  train_perc = 0.7, fit_feature = "RMSE",
-                                  cpg_dens_feat = TRUE, opt_method = "CG",
-                                  opt_itnmax = 100, is_parallel = TRUE,
-                                  no_cores = NULL, is_summary = TRUE){
-
+bpr_diff_eval_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
+                                       w = NULL, basis = NULL, train_ind = NULL,
+                                       train_perc = 0.7, fit_feature = "RMSE",
+                                       cpg_dens_feat = TRUE, opt_method = "CG",
+                                       interm_features = TRUE,
+                                       opt_itnmax = 100, is_parallel = TRUE,
+                                       no_cores = NULL, is_summary = TRUE){
+  
   # Check that x is a list object
   assertthat::assert_that(is.list(x))
-
+  
   # Learn methylation profiles for control samples
   message("Learning control methylation profiles ...\n")
   out_contr_opt <- bpr_optim(x           = x$control,
@@ -77,7 +78,7 @@ bpr_diff_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
                              opt_itnmax  = opt_itnmax,
                              is_parallel = is_parallel,
                              no_cores    = no_cores)
-
+  
   # Learn methylation profiles for treatment samples
   message("Learning treatment methylation profiles ...\n")
   out_treat_opt <- bpr_optim(x           = x$treatment,
@@ -89,35 +90,58 @@ bpr_diff_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
                              opt_itnmax  = opt_itnmax,
                              is_parallel = is_parallel,
                              no_cores    = no_cores)
-
+  
   # Compute fold change gene expression levels
   y_diff <- log2(y$treatment / y$control)
-
-  # Concatenate coefficients from both samples
-  W_diff <- cbind(out_contr_opt$W_opt, out_treat_opt$W_opt)
-  colnames(W_diff) <- NULL
-
+  
+  if (interm_features){
+    vec <- vector(mode = "numeric")
+    for (i in 1:(basis$M + 1) ){
+      if (i == 1){
+        vec <- -1 - (-1 - basis$mus[1])/2
+      }else if (i <= basis$M){
+        vec <- c(vec, basis$mus[i-1] - (basis$mus[i-1] - basis$mus[i])/2)
+      }else{
+        vec <- c(vec, basis$mus[i-1] - (basis$mus[i-1] - 1)/2)
+      }
+    }
+    vec <- c(basis$mus, vec)
+    eval_points <- sort(vec)
+  }else{
+    eval_points <- basis$mus
+  }
+  
+  # Evaluate both functions and subtract the evaluated points
+  W_eval <- matrix(0, nrow = length(x$control), ncol = length(eval_points))
+  for (i in 1:length(x$control)){
+    f_contr <- eval_probit_function(basis, eval_points, out_contr_opt$W_opt[i,])
+    f_treat <- eval_probit_function(basis, eval_points, out_treat_opt$W_opt[i,])
+    
+    W_eval[i,] <- f_treat - f_contr
+  }
+  colnames(W_eval) <- NULL
+  
   # Create training and test sets
   message("Partitioning to test and train data ...\n")
-  dataset <- .partition_data(x          = W_diff,
+  dataset <- .partition_data(x          = W_eval,
                              y          = y_diff,
                              train_ind  = train_ind,
                              train_perc = train_perc)
-
+  
   # Train regression model from methylation profiles
   message("Training linear regression model ...\n")
   train_model <- train_model_gex(formula    = formula,
                                  model_name = model_name,
                                  train      = dataset$train,
                                  is_summary = is_summary)
-
+  
   # Predict gene expression from methylation profiles
   message("Making predictions ...\n")
   predictions <- predict_model_gex(model      = train_model$gex_model,
                                    test       = dataset$test,
                                    is_summary = is_summary)
   message("Done!\n\n")
-
+  
   # Create 'bpr_predict' object
   obj <- structure(list(formula      = formula,
                         model_name   = model_name,
@@ -128,7 +152,7 @@ bpr_diff_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
                         cpg_dens_feat = cpg_dens_feat,
                         opt_method   = opt_method,
                         opt_itnmax   = opt_itnmax,
-                        W_opt_conc   = W_diff,
+                        W_opt        = W_eval,
                         W_opt_contr  = out_contr_opt$W_opt,
                         W_opt_treat  = out_treat_opt$W_opt,
                         Mus          = list(control = out_contr_opt$Mus,
