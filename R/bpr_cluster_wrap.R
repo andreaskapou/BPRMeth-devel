@@ -47,7 +47,7 @@
 #' @export
 bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                              em_max_iter = 100, epsilon_conv = 1e-04,
-                             opt_method = "CG", opt_itnmax = 100,
+                             lambda = 1/2, opt_method = "CG", opt_itnmax = 100,
                              init_opt_itnmax = 100, is_parallel = TRUE,
                              no_cores = NULL, is_verbose = FALSE){
     # Check that x is a list object
@@ -63,6 +63,7 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                          pi_k = pi_k,
                          w = w,
                          basis = basis,
+                         lambda = lambda,
                          opt_method = opt_method,
                          init_opt_itnmax = init_opt_itnmax,
                          is_parallel = is_parallel,
@@ -80,6 +81,7 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                            basis = basis,
                            em_max_iter = em_max_iter,
                            epsilon_conv = epsilon_conv,
+                           lambda = lambda,
                            opt_method = opt_method,
                            opt_itnmax = opt_itnmax,
                            is_parallel = is_parallel,
@@ -150,9 +152,9 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
 # @importFrom stats optim
 #
 .bpr_EM <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL,
-                    em_max_iter = 100, epsilon_conv = 1e-05, opt_method = "CG",
-                    opt_itnmax = 100, is_parallel = TRUE, no_cores = NULL,
-                    is_verbose = FALSE){
+                    em_max_iter = 100, epsilon_conv = 1e-05, lambda = 1/2,
+                    opt_method = "CG", opt_itnmax = 100, is_parallel = TRUE,
+                    no_cores = NULL, is_verbose = FALSE){
 
     # Extract number of observations
     N <- length(x)
@@ -246,6 +248,7 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                                      x         = x,
                                      des_mat   = des_mat,
                                      post_prob = post_prob[, k],
+                                     lambda    = lambda,
                                      is_NLL    = TRUE)$par
                     })
         }else{
@@ -261,6 +264,7 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                                       x         = x,
                                       des_mat   = des_mat,
                                       post_prob = post_prob[, k],
+                                      lambda    = lambda,
                                       is_NLL    = TRUE)$par
                      })
         }
@@ -291,6 +295,7 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                           N = N,
                           w = w,
                           pi_k = pi_k,
+                          lambda = lambda,
                           em_max_iter = em_max_iter,
                           opt_method = opt_method,
                           opt_itnmax = opt_itnmax,
@@ -305,8 +310,9 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
 
 # Internal function to make all the appropriate type checks.
 .do_EM_checks <- function(x, K = 2, pi_k = NULL,  w = NULL, basis = NULL,
-                          opt_method = "CG", init_opt_itnmax = 100,
-                          is_parallel = TRUE, no_cores = NULL){
+                          lambda = 1/2, opt_method = "CG",
+                          init_opt_itnmax = 100, is_parallel = TRUE,
+                          no_cores = NULL){
     if (is.null(basis)){
         basis <- create_rbf_object(M = 3)
     }
@@ -319,6 +325,7 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                              basis       = basis,
                              fit_feature = NULL,
                              cpg_dens_feat = FALSE,
+                             lambda      = lambda,
                              method      = opt_method,
                              itnmax      = init_opt_itnmax,
                              is_parallel = is_parallel,
