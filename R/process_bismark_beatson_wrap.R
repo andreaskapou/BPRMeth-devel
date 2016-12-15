@@ -107,12 +107,12 @@ process_bismark_beatson_wrap <- function(bs_files, rna_files,
                                        fmin          = fmin,
                                        fmax          = fmax)
 
-    # Keep only the corresponding gene expression data
-    rna_data <- rna_data[methyl_reg$prom_ind]
-    # Keep only the corresponding gene annotation data
-    prom_reg <- prom_reg[methyl_reg$prom_ind]
+#     # Keep only the corresponding gene expression data
+#     rna_data <- rna_data[methyl_reg$prom_ind]
+#     # Keep only the corresponding gene annotation data
+#     prom_reg <- prom_reg[methyl_reg$prom_ind]
 
-    proc_data <- preprocess_final_HTS_data(methyl_region = methyl_reg$meth_data,
+    proc_data <- preprocess_final_HTS_data(methyl_region = methyl_reg,
                                            prom_reg = prom_reg,
                                            rna_data = rna_data,
                                            gene_log2_transf = gene_log2_transf,
