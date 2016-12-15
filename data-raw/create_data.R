@@ -1,6 +1,6 @@
 create_meth_data <- function(N = 300, pi.c = c(0.45, 0.35, 0.2), max_L = 25,
                             xmin = -100, xmax=100, fmin = -1, fmax = 1){
-  set.seed(1)
+  set.seed(3)
   # Create a list to store data for each methylation region
   X       <- list()
   # A vector for storing corresponding gene expression data
@@ -14,7 +14,7 @@ create_meth_data <- function(N = 300, pi.c = c(0.45, 0.35, 0.2), max_L = 25,
     # Randomly sample locations for the CpGs
     obs <- sort(sample(xmin:xmax, L))
     # Scale them, so the data lie in the (fmin, fmax) range
-    X[[i]][ ,1] <- minmax_scaling(data = obs,
+    X[[i]][ ,1] <- BPRMeth:::.minmax_scaling(data = obs,
                                   xmin = xmin,
                                   xmax = xmax,
                                   fmin = fmin,
@@ -89,3 +89,333 @@ bpr <- create_meth_data(N=600)
 meth_data <- bpr$X
 gex_data <- bpr$Y
 devtools::use_data(meth_data, gex_data, overwrite = TRUE)
+
+
+
+
+
+
+
+
+create_meth_data_2 <- function(N = 300, pi.c = c(0.45, 0.35, 0.2), max_L = 25,
+                             xmin = -100, xmax=100, fmin = -1, fmax = 1){
+    set.seed(3)
+    # Create a list to store data for each methylation region
+    #X       <- list()
+    # A vector for storing corresponding gene expression data
+    Y       <- vector(mode = "numeric", length = N)
+
+    X <- list(control = list(), treatment = list())
+
+    L <- list()
+    for (i in 1:N){
+        # L is the number of CpGs found in the ith region
+        L[[i]] <- rbinom(n = 1, size = max_L, prob = .8)
+    }
+    # For each of the N objects
+    for (i in 1:N){
+        # L is the number of CpGs found in the ith region
+        #L <- rbinom(n = 1, size = max_L, prob = .8)
+        X$control[[i]] <- matrix(0, nrow = L[[i]], ncol = 3)
+        # Randomly sample locations for the CpGs
+        obs <- sort(sample(xmin:xmax, L[[i]]))
+        # Scale them, so the data lie in the (fmin, fmax) range
+        X$control[[i]][ ,1] <- BPRMeth:::.minmax_scaling(data = obs,
+                                                         xmin = xmin,
+                                                         xmax = xmax,
+                                                         fmin = fmin,
+                                                         fmax = fmax)
+        X$treatment[[i]] <- X$control[[i]]
+    }
+    for (i in 1:N){
+        if (i < N * pi.c[1]){   # First methylation profile
+            lb <- round(L[[i]] / 4)
+
+            X$control[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$control[[i]][1:lb,3] <- rbinom(lb, 14, .9)
+                if(all(X$control[[i]][1:lb,2] > X$control[[i]][1:lb,3]))
+                    break
+            }
+
+            X$control[[i]][(lb + 1):L[[i]],2] <- rbinom(L[[i]] - lb, 20, .9)
+            repeat{
+                X$control[[i]][(lb + 1):L[[i]],3] <- rbinom(L[[i]] - lb, 2, .9)
+                if (all(X$control[[i]][(lb + 1):L[[i]],2] > X$control[[i]][(lb + 1):L[[i]],3]))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=200)
+        }else if (i < (N * pi.c[2] + N * pi.c[1])){ # Second methylation profile
+            lb <- round(L[[i]] / 1.5)
+
+            X$control[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$control[[i]][1:lb,3] <- rbinom(lb, 2, .8)
+                if(all(X$control[[i]][1:lb,2] > X$control[[i]][1:lb,3]))
+                    break
+            }
+
+            X$control[[i]][(lb + 1):L[[i]],2] <- rbinom(L[[i]] - lb, 20, .9)
+            repeat{
+                X$control[[i]][(lb + 1):L[[i]],3] <- rbinom(L[[i]]-lb, 14, .9)
+                if (all(X$control[[i]][(lb + 1):L[[i]],2] > X$control[[i]][(lb + 1):L[[i]],3]))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=100)
+        }else{                  # Third methylation profile
+            lb <- round(L[[i]] / 2.5)
+            mb <- round(L[[i]] / 3.5)
+
+            X$control[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$control[[i]][1:lb,3] <- rbinom(lb, 2, .9)
+                if(all(X$control[[i]][1:lb,2] > X$control[[i]][1:lb,3]))
+                    break
+            }
+
+            X$control[[i]][(lb + 1):(lb + mb),2] <- rbinom(mb, 20, .9)
+            repeat{
+                X$control[[i]][(lb + 1):(lb + mb),3] <- rbinom(mb, 14, .9)
+                if (all(X$control[[i]][(lb + 1):(lb + mb),2] > X$control[[i]][(lb + 1):(lb + mb),3]))
+                    break
+            }
+
+            X$control[[i]][(lb + 1 + mb):L[[i]],2] <- rbinom(L[[i]] - mb - lb, 20, .9)
+            repeat{
+                X$control[[i]][(lb + 1 + mb):L[[i]],3] <- rbinom(L[[i]] - mb - lb, 2, .9)
+                if (all(X$control[[i]][(lb + 1 + mb):L[[i]],2] > X$control[[i]][(lb + 1 + mb):L[[i]]],3))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=50)
+        }
+    }
+
+
+    for (i in 1:N){
+        if (i < N * pi.c[1]){   # First methylation profile
+            lb <- round(L[[i]] / 4)
+
+            X$treatment[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$treatment[[i]][1:lb,3] <- rbinom(lb, 14, .9)
+                if(all(X$treatment[[i]][1:lb,2] > X$treatment[[i]][1:lb,3]))
+                    break
+            }
+
+            X$treatment[[i]][(lb + 1):L[[i]],2] <- rbinom(L[[i]] - lb, 20, .9)
+            repeat{
+                X$treatment[[i]][(lb + 1):L[[i]],3] <- rbinom(L[[i]] - lb, 2, .9)
+                if (all(X$treatment[[i]][(lb + 1):L[[i]],2] > X$treatment[[i]][(lb + 1):L[[i]],3]))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=200)
+        }else if (i < (N * pi.c[2] + N * pi.c[1])){ # Second methylation profile
+            lb <- round(L[[i]] / 1.5)
+
+            X$treatment[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$treatment[[i]][1:lb,3] <- rbinom(lb, 2, .8)
+                if(all(X$treatment[[i]][1:lb,2] > X$treatment[[i]][1:lb,3]))
+                    break
+            }
+
+            X$treatment[[i]][(lb + 1):L[[i]],2] <- rbinom(L[[i]] - lb, 20, .9)
+            repeat{
+                X$treatment[[i]][(lb + 1):L[[i]],3] <- rbinom(L[[i]]-lb, 14, .9)
+                if (all(X$treatment[[i]][(lb + 1):L[[i]],2] > X$treatment[[i]][(lb + 1):L[[i]],3]))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=100)
+        }else{                  # Third methylation profile
+            lb <- round(L[[i]] / 2.5)
+            mb <- round(L[[i]] / 3.5)
+
+            X$treatment[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$treatment[[i]][1:lb,3] <- rbinom(lb, 2, .9)
+                if(all(X$treatment[[i]][1:lb,2] > X$treatment[[i]][1:lb,3]))
+                    break
+            }
+
+            X$treatment[[i]][(lb + 1):(lb + mb),2] <- rbinom(mb, 20, .9)
+            repeat{
+                X$treatment[[i]][(lb + 1):(lb + mb),3] <- rbinom(mb, 14, .9)
+                if (all(X$treatment[[i]][(lb + 1):(lb + mb),2] > X$treatment[[i]][(lb + 1):(lb + mb),3]))
+                    break
+            }
+
+            X$treatment[[i]][(lb + 1 + mb):L[[i]],2] <- rbinom(L[[i]] - mb - lb, 20, .9)
+            repeat{
+                X$treatment[[i]][(lb + 1 + mb):L[[i]],3] <- rbinom(L[[i]] - mb - lb, 2, .9)
+                if (all(X$treatment[[i]][(lb + 1 + mb):L[[i]],2] > X$treatment[[i]][(lb + 1 + mb):L[[i]]],3))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=50)
+        }
+    }
+
+    return(list(X = X, Y = Y))
+}
+
+
+
+
+create_meth_data_3 <- function(N = 300, pi.c = c(0.45, 0.35, 0.2), max_L = 25,
+                               xmin = -100, xmax=100, fmin = -1, fmax = 1){
+    set.seed(3)
+    # Create a list to store data for each methylation region
+    #X       <- list()
+    # A vector for storing corresponding gene expression data
+    Y       <- vector(mode = "numeric", length = N)
+
+    X <- list(control = list(), treatment = list())
+
+    L <- list()
+    for (i in 1:N){
+        # L is the number of CpGs found in the ith region
+        L[[i]] <- rbinom(n = 1, size = max_L, prob = .8)
+    }
+    # For each of the N objects
+    for (i in 1:N){
+        # L is the number of CpGs found in the ith region
+        #L <- rbinom(n = 1, size = max_L, prob = .8)
+        X$control[[i]] <- matrix(0, nrow = L[[i]], ncol = 3)
+        # Randomly sample locations for the CpGs
+        obs <- sort(sample(xmin:xmax, L[[i]]))
+        # Scale them, so the data lie in the (fmin, fmax) range
+        X$control[[i]][ ,1] <- BPRMeth:::.minmax_scaling(data = obs,
+                                                         xmin = xmin,
+                                                         xmax = xmax,
+                                                         fmin = fmin,
+                                                         fmax = fmax)
+        X$treatment[[i]] <- X$control[[i]]
+    }
+    for (i in 1:N){
+        if (i < N * pi.c[1]){   # First methylation profile
+            lb <- round(L[[i]] / 4)
+
+            X$control[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$control[[i]][1:lb,3] <- rbinom(lb, 14, .9)
+                if(all(X$control[[i]][1:lb,2] > X$control[[i]][1:lb,3]))
+                    break
+            }
+
+            X$control[[i]][(lb + 1):L[[i]],2] <- rbinom(L[[i]] - lb, 20, .9)
+            repeat{
+                X$control[[i]][(lb + 1):L[[i]],3] <- rbinom(L[[i]] - lb, 2, .9)
+                if (all(X$control[[i]][(lb + 1):L[[i]],2] > X$control[[i]][(lb + 1):L[[i]],3]))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=200)
+        }else if (i < (N * pi.c[2] + N * pi.c[1])){ # Second methylation profile
+            lb <- round(L[[i]] / 1.5)
+
+            X$control[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$control[[i]][1:lb,3] <- rbinom(lb, 2, .8)
+                if(all(X$control[[i]][1:lb,2] > X$control[[i]][1:lb,3]))
+                    break
+            }
+
+            X$control[[i]][(lb + 1):L[[i]],2] <- rbinom(L[[i]] - lb, 20, .9)
+            repeat{
+                X$control[[i]][(lb + 1):L[[i]],3] <- rbinom(L[[i]]-lb, 14, .9)
+                if (all(X$control[[i]][(lb + 1):L[[i]],2] > X$control[[i]][(lb + 1):L[[i]],3]))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=100)
+        }else{                  # Third methylation profile
+            lb <- round(L[[i]] / 2.5)
+            mb <- round(L[[i]] / 3.5)
+
+            X$control[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$control[[i]][1:lb,3] <- rbinom(lb, 2, .9)
+                if(all(X$control[[i]][1:lb,2] > X$control[[i]][1:lb,3]))
+                    break
+            }
+
+            X$control[[i]][(lb + 1):(lb + mb),2] <- rbinom(mb, 20, .9)
+            repeat{
+                X$control[[i]][(lb + 1):(lb + mb),3] <- rbinom(mb, 14, .9)
+                if (all(X$control[[i]][(lb + 1):(lb + mb),2] > X$control[[i]][(lb + 1):(lb + mb),3]))
+                    break
+            }
+
+            X$control[[i]][(lb + 1 + mb):L[[i]],2] <- rbinom(L[[i]] - mb - lb, 20, .9)
+            repeat{
+                X$control[[i]][(lb + 1 + mb):L[[i]],3] <- rbinom(L[[i]] - mb - lb, 2, .9)
+                if (all(X$control[[i]][(lb + 1 + mb):L[[i]],2] > X$control[[i]][(lb + 1 + mb):L[[i]]],3))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=50)
+        }
+    }
+
+
+    for (i in 1:N){
+        if (i < N * pi.c[1]){   # First methylation profile
+            lb <- round(L[[i]] / 4)
+
+            X$treatment[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$treatment[[i]][1:lb,3] <- rbinom(lb, 14, .9)
+                if(all(X$treatment[[i]][1:lb,2] > X$treatment[[i]][1:lb,3]))
+                    break
+            }
+
+            X$treatment[[i]][(lb + 1):L[[i]],2] <- rbinom(L[[i]] - lb, 20, .9)
+            repeat{
+                X$treatment[[i]][(lb + 1):L[[i]],3] <- rbinom(L[[i]] - lb, 8, .9)
+                if (all(X$treatment[[i]][(lb + 1):L[[i]],2] > X$treatment[[i]][(lb + 1):L[[i]],3]))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=200)
+        }else if (i < (N * pi.c[2] + N * pi.c[1])){ # Second methylation profile
+            lb <- round(L[[i]] / 1.5)
+
+            X$treatment[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$treatment[[i]][1:lb,3] <- rbinom(lb, 2, .8)
+                if(all(X$treatment[[i]][1:lb,2] > X$treatment[[i]][1:lb,3]))
+                    break
+            }
+
+            X$treatment[[i]][(lb + 1):L[[i]],2] <- rbinom(L[[i]] - lb, 20, .9)
+            repeat{
+                X$treatment[[i]][(lb + 1):L[[i]],3] <- rbinom(L[[i]]-lb, 14, .9)
+                if (all(X$treatment[[i]][(lb + 1):L[[i]],2] > X$treatment[[i]][(lb + 1):L[[i]],3]))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=100)
+        }else{                  # Third methylation profile
+            lb <- round(L[[i]] / 2.5)
+            mb <- round(L[[i]] / 3.5)
+
+            X$treatment[[i]][1:lb,2] <- rbinom(lb, 20, .9)
+            repeat{
+                X$treatment[[i]][1:lb,3] <- rbinom(lb, 2, .9)
+                if(all(X$treatment[[i]][1:lb,2] > X$treatment[[i]][1:lb,3]))
+                    break
+            }
+
+            X$treatment[[i]][(lb + 1):(lb + mb),2] <- rbinom(mb, 20, .9)
+            repeat{
+                X$treatment[[i]][(lb + 1):(lb + mb),3] <- rbinom(mb, 14, .9)
+                if (all(X$treatment[[i]][(lb + 1):(lb + mb),2] > X$treatment[[i]][(lb + 1):(lb + mb),3]))
+                    break
+            }
+
+            X$treatment[[i]][(lb + 1 + mb):L[[i]],2] <- rbinom(L[[i]] - mb - lb, 20, .9)
+            repeat{
+                X$treatment[[i]][(lb + 1 + mb):L[[i]],3] <- rbinom(L[[i]] - mb - lb, 2, .9)
+                if (all(X$treatment[[i]][(lb + 1 + mb):L[[i]],2] > X$treatment[[i]][(lb + 1 + mb):L[[i]]],3))
+                    break
+            }
+            Y[i] <- rpois(1, lambda=50)
+        }
+    }
+
+    return(list(X = X, Y = Y))
+}

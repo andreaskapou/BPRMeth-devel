@@ -17,5 +17,5 @@ test_that("bpr_gradient function works fine", {
   data <- matrix(c(10, 12, 15, 7, 9, 8), ncol = 2)
   w <- c(.1, .1, 1)
   expect_gt(.bpr_gradient(w, des_mat$H, data)[1], -15.4)
-  expect_lt(.bpr_gradient(w, des_mat$H, data)[1], -15.3)
+  expect_lt(.bpr_gradient(w, des_mat$H, data)[1], -15.2)
 })
