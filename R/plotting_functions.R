@@ -34,7 +34,11 @@ plot_fitted_profiles <- function(region, X, fit_prof, fit_mean = NULL,
 
     graphics::par(cex=1.05, mai=c(1.37,1.37,.7,.3) )
     x <- X[[region]][,1]
-    y <- X[[region]][,3]/X[[region]][,2]
+    if (NCOL(X[[region]] == 3)){
+        y <- X[[region]][,3]/X[[region]][,2]
+    }else{
+        y <- X[[region]][,2]
+    }
     xs <- seq(from = -1, to = 1, by = 0.01)
     graphics::plot(x, y, col = "blue2", pch = 21, ylim = c(0,1),
                    xlim = c(-1,1), lwd = 0.8, xlab = NA, ylab = NA,
@@ -46,12 +50,12 @@ plot_fitted_profiles <- function(region, X, fit_prof, fit_mean = NULL,
     if(!is.null(fit_mean)){
         graphics::lines(x = xs,
                         y = eval_probit_function(fit_mean$basis, xs,
-                                                 fit_mean$W_opt[region, ]),
+                                                 fit_mean$W_opt[region, 1:(fit_mean$basis$M + 1)]),
                         col = 'coral', lwd = 2, lty = 2)
     }
     graphics::lines(x = xs,
                     y = eval_probit_function(fit_prof$basis, xs,
-                                             fit_prof$W_opt[region, ]),
+                                             fit_prof$W_opt[region, 1:(fit_prof$basis$M + 1)]),
                     col = 'red2', lwd = 2)
 }
 
