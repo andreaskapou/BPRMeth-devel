@@ -15,6 +15,7 @@
 # @param data An \code{L x 2} matrix containing in the 1st column the total
 #   number of trials and in the 2nd the number of successes. Each row
 #   corresponds to each row of the design matrix.
+# @param lambda The complexity penalty coefficient for penalized regression.
 # @param is_NLL Logical, indicating if the Negative Log Likelihood should be
 #   returned.
 #
@@ -26,7 +27,7 @@
 #
 # @importFrom stats pnorm dbinom
 #
-.bpr_likelihood <- function(w, H, data, is_NLL = FALSE){
+.bpr_likelihood <- function(w, H, data, lambda = 1/2, is_NLL = FALSE){
     total <- data[, 1]
     succ  <- data[, 2]
 
@@ -40,8 +41,12 @@
     Phi[which(Phi < 1e-289)] <- 1e-289
 
     # Compute the log likelihood
-    res <- sum(dbinom(x = succ, size = total, prob = Phi, log = TRUE)) -
-        1 / 2 * t(w) %*% w
+    res <- sum(dbinom(x = succ, size = total, prob = Phi, log = TRUE))
+        #- lambda * t(w) %*% w
+    M <- length(w)
+    if (M > 1){
+        res <- res - lambda * t(w[2:M]) %*% w[2:M]
+    }
 
     # If we required the Negative Log Likelihood
     if (is_NLL){
@@ -67,7 +72,7 @@
 #
 # @importFrom stats pnorm dnorm
 #
-.bpr_gradient <- function(w, H, data, is_NLL = FALSE){
+.bpr_gradient <- function(w, H, data, lambda = 1/2, is_NLL = FALSE){
     total <- data[, 1]
     succ  <- data[, 2]
 
@@ -86,8 +91,12 @@
     N[which(N < 1e-289)] <- 1e-289
 
     # Compute the gradient vector w.r.t the coefficients w
-    gr <- (N * (succ * (1 / Phi) - (total - succ) * (1 / (1 - Phi)))) %*% H - w
-
+    gr <- (N * (succ * (1 / Phi) - (total - succ) * (1 / (1 - Phi)))) %*% H
+        #- 2 * lambda * w
+    M <- length(w)
+    if (M > 1){
+        gr[2:M] <- gr[2:M] - 2 * lambda * w[2:M]
+    }
     # If we required the Negative Log Likelihood
     if (is_NLL){
         gr <- (-1) * gr
@@ -113,6 +122,7 @@
 #   of basis functions.
 # @param post_prob A vector of length N containing the posterior probabilities
 #   fore each element of list x, respectively.
+# @param lambda The complexity penalty coefficient for penalized regression.
 # @param is_NLL Logical, indicating if the Negative Log Likelihood should be
 #   returned.
 #
@@ -122,7 +132,8 @@
 #
 # @seealso \code{\link{bpr_likelihood}}, \code{\link{bpr_EM}}
 #
-.sum_weighted_bpr_lik <- function(w, x, des_mat, post_prob, is_NLL = TRUE){
+.sum_weighted_bpr_lik <- function(w, x, des_mat, post_prob, lambda = 1/2,
+                                  is_NLL = TRUE){
     N <- length(x)
 
     # TODO: Create tests
@@ -131,6 +142,7 @@
                   FUN = function(y) .bpr_likelihood(w = w,
                                                     H = des_mat[[y]]$H,
                                                     data = x[[y]][, 2:3],
+                                                    lambda = lambda,
                                                     is_NLL = is_NLL),
                   FUN.VALUE = numeric(1),
                   USE.NAMES = FALSE)
@@ -155,7 +167,8 @@
 #
 # @seealso \code{\link{bpr_gradient}}, \code{\link{bpr_EM}}
 #
-.sum_weighted_bpr_grad <- function(w, x, des_mat, post_prob, is_NLL = TRUE){
+.sum_weighted_bpr_grad <- function(w, x, des_mat, post_prob, lambda = 1/2,
+                                   is_NLL = TRUE){
     N <- length(x)
 
     # TODO: Create tests
@@ -164,6 +177,7 @@
                   FUN = function(y) .bpr_gradient(w = w,
                                                   H = des_mat[[y]]$H,
                                                   data = x[[y]][, 2:3],
+                                                  lambda = lambda,
                                                   is_NLL = is_NLL),
                   FUN.VALUE = numeric(length(w)),
                   USE.NAMES = FALSE)

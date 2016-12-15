@@ -21,6 +21,7 @@
 #'   the Negative Log Likelihood as measure of error.
 #' @param cpg_dens_feat Logical, whether to return an additional feature for the
 #'   CpG density across the promoter region.
+#' @param lambda The complexity penalty coefficient for penalized regression.
 #' @param opt_method The optimization method to be used. See
 #'   \code{\link[stats]{optim}} for possible methods. Default is "CG".
 #' @param opt_itnmax Optional argument giving the maximum number of iterations
@@ -82,9 +83,9 @@ bpr_optim.default <- function(x, ...){
 #'
 #' @export
 bpr_optim.list <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
-                           cpg_dens_feat = TRUE, opt_method = "CG",
-                           opt_itnmax = 100, is_parallel = TRUE,
-                           no_cores = NULL, ...){
+                           cpg_dens_feat = TRUE, lambda = 1/2,
+                           opt_method = "CG", opt_itnmax = 100,
+                           is_parallel = TRUE, no_cores = NULL, ...){
     # Check that x is a list object
     assertthat::assert_that(is.list(x))
 
@@ -125,6 +126,7 @@ bpr_optim.list <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
                                               basis       = basis,
                                               fit_feature = fit_feature,
                                               cpg_dens_feat = cpg_dens_feat,
+                                              lambda      = lambda,
                                               opt_method  = opt_method,
                                               opt_itnmax  = opt_itnmax)
               })
@@ -140,6 +142,7 @@ bpr_optim.list <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
                                                basis       = basis,
                                                fit_feature = fit_feature,
                                                cpg_dens_feat = cpg_dens_feat,
+                                               lambda      = lambda,
                                                opt_method  = opt_method,
                                                opt_itnmax  = opt_itnmax)
                })
@@ -189,13 +192,17 @@ bpr_optim.list <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
 #'
 #' @export
 bpr_optim.matrix <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
-                             cpg_dens_feat = TRUE, opt_method = "CG",
+                             cpg_dens_feat = TRUE, lambda = 1/2, opt_method = "CG",
                              opt_itnmax = 100, ...){
     # Vector for storing CpG locations relative to TSS
     obs <- as.vector(x[, 1])
 
-    # Methylation data
-    data <- x[, 2:3]
+    if (NCOL(x) == 3){
+        # Methylation data
+        data <- x[, 2:3]
+    }else{
+        data <- cbind(1, x[, 2])
+    }
 
     # Create design matrix H
     des_mat <- .design_matrix(x = basis, obs = obs)
@@ -210,6 +217,7 @@ bpr_optim.matrix <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
                    control = list(maxit = opt_itnmax),
                    H       = H,
                    data    = data,
+                   lambda  = lambda,
                    is_NLL  = TRUE)$par
 
     if (basis$M != 0){

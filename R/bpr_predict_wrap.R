@@ -60,7 +60,7 @@
 bpr_predict_wrap <- function(formula = NULL, x, y, model_name = "svm", w = NULL,
                              basis = NULL, train_ind = NULL, train_perc = 0.7,
                              fit_feature = "RMSE", cpg_dens_feat = TRUE,
-                             opt_method = "CG", opt_itnmax = 100,
+                             lambda = 1/2, opt_method = "CG", opt_itnmax = 100,
                              is_parallel = TRUE, no_cores = NULL,
                              is_summary = TRUE){
 
@@ -74,6 +74,7 @@ bpr_predict_wrap <- function(formula = NULL, x, y, model_name = "svm", w = NULL,
                          basis       = basis,
                          fit_feature = fit_feature,
                          cpg_dens_feat = cpg_dens_feat,
+                         lambda      = lambda,
                          opt_method  = opt_method,
                          opt_itnmax  = opt_itnmax,
                          is_parallel = is_parallel,
@@ -87,7 +88,7 @@ bpr_predict_wrap <- function(formula = NULL, x, y, model_name = "svm", w = NULL,
                                train_perc = train_perc)
 
     # Train regression model from methylation profiles
-    message("Training linear regression model ...\n")
+    message("Training regression model ...\n")
     train_model <- train_model_gex(formula    = formula,
                                    model_name = model_name,
                                    train      = dataset$train,
@@ -108,6 +109,7 @@ bpr_predict_wrap <- function(formula = NULL, x, y, model_name = "svm", w = NULL,
                           train_perc   = train_perc,
                           fit_feature  = fit_feature,
                           cpg_dens_feat = cpg_dens_feat,
+                          lambda       = lambda,
                           opt_method   = opt_method,
                           opt_itnmax   = opt_itnmax,
                           W_opt        = out_opt$W_opt,
