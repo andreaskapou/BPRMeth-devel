@@ -32,6 +32,7 @@
 #' @param train_perc Optional parameter for defining the percentage of the
 #'   dataset to be used for training set, the remaining will be the test set.
 #' @param is_summary Logical, print the summary statistics.
+#' @param interm_features Logical, create intermediate features.
 #' @inheritParams bpr_optimize
 #'
 #' @return A 'bpr_diff_predict' object which, in addition to the input
@@ -63,10 +64,10 @@ bpr_diff_eval_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
                                        interm_features = TRUE,
                                        opt_itnmax = 100, is_parallel = TRUE,
                                        no_cores = NULL, is_summary = TRUE){
-  
+
   # Check that x is a list object
   assertthat::assert_that(is.list(x))
-  
+
   # Learn methylation profiles for control samples
   message("Learning control methylation profiles ...\n")
   out_contr_opt <- bpr_optim(x           = x$control,
@@ -78,7 +79,7 @@ bpr_diff_eval_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
                              opt_itnmax  = opt_itnmax,
                              is_parallel = is_parallel,
                              no_cores    = no_cores)
-  
+
   # Learn methylation profiles for treatment samples
   message("Learning treatment methylation profiles ...\n")
   out_treat_opt <- bpr_optim(x           = x$treatment,
@@ -90,10 +91,10 @@ bpr_diff_eval_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
                              opt_itnmax  = opt_itnmax,
                              is_parallel = is_parallel,
                              no_cores    = no_cores)
-  
+
   # Compute fold change gene expression levels
   y_diff <- log2(y$treatment / y$control)
-  
+
   if (interm_features){
     vec <- vector(mode = "numeric")
     for (i in 1:(basis$M + 1) ){
@@ -110,38 +111,38 @@ bpr_diff_eval_predict_wrap <- function(formula = NULL, x, y, model_name = "svm",
   }else{
     eval_points <- basis$mus
   }
-  
+
   # Evaluate both functions and subtract the evaluated points
   W_eval <- matrix(0, nrow = length(x$control), ncol = length(eval_points))
   for (i in 1:length(x$control)){
     f_contr <- eval_probit_function(basis, eval_points, out_contr_opt$W_opt[i,])
     f_treat <- eval_probit_function(basis, eval_points, out_treat_opt$W_opt[i,])
-    
+
     W_eval[i,] <- f_treat - f_contr
   }
   colnames(W_eval) <- NULL
-  
+
   # Create training and test sets
   message("Partitioning to test and train data ...\n")
   dataset <- .partition_data(x          = W_eval,
                              y          = y_diff,
                              train_ind  = train_ind,
                              train_perc = train_perc)
-  
+
   # Train regression model from methylation profiles
   message("Training linear regression model ...\n")
   train_model <- train_model_gex(formula    = formula,
                                  model_name = model_name,
                                  train      = dataset$train,
                                  is_summary = is_summary)
-  
+
   # Predict gene expression from methylation profiles
   message("Making predictions ...\n")
   predictions <- predict_model_gex(model      = train_model$gex_model,
                                    test       = dataset$test,
                                    is_summary = is_summary)
   message("Done!\n\n")
-  
+
   # Create 'bpr_predict' object
   obj <- structure(list(formula      = formula,
                         model_name   = model_name,
