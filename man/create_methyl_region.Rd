@@ -5,7 +5,8 @@
 \title{Create methylation regions for each gene promoter.}
 \usage{
 create_methyl_region(bs_data, prom_region, cpg_density = 10,
-  sd_thresh = 0.1, ignore_strand = TRUE, fmin = -1, fmax = 1)
+  sd_thresh = 0.1, ignore_strand = TRUE, is_single_cell = FALSE,
+  fmin = -1, fmax = 1)
 }
 \arguments{
 \item{bs_data}{\code{\link[GenomicRanges]{GRanges}} object containing the
@@ -31,6 +32,9 @@ methylation change.}
 
 \item{ignore_strand}{Logical, whether or not to ignore strand information.}
 
+\item{is_single_cell}{Logical, if we work with single cell data, then we keep
+only the information of methylated or not for each CpG location.}
+
 \item{fmin}{Optional minimum range value for region location scaling. Under
 this version, this parameter should be left to its default value.}
 
@@ -45,7 +49,8 @@ A \code{methyl_region} object containing the following information:
   columns contain the following information: \enumerate{ \item{ 1st column:
   Contains the locations of CpGs relative to TSS. Note that the actual
   locations are scaled to the (fmin, fmax) region. } \item{ 2nd column:
-  Contains the total reads of each CpG in the corresponding location.} \item{
+  Contains the total reads of each CpG in the corresponding location. NOTE
+  that for single-cell data this column is not stored in the object.} \item{
   3rd column: Contains the methylated reads each CpG in the corresponding
   location.} } } \item{ \code{prom_ind}: A vector storing the corresponding
   promoter indices, so as to map each methylation region with its

@@ -19,10 +19,10 @@ A \code{\link[GenomicRanges]{GRanges}} object if \code{is_GRanges} is
   TRUE, otherwise a \code{\link[data.table]{data.table}} object.
 
   The GRanges object contains three additional metadata columns: \itemize{
-  \item \code{ensembl_id}: Ensembl IDs of each gene promoter. \item
+  \item \code{id}: IDs (e.g. Ensembl) of each gene promoter. \item
   \code{gene_name}: Gene name. \item \code{gene_fpkm}: Expression level in
   FPKM. } These columns can be accessed as follows:
-  \code{granges_object$ensembl_id}
+  \code{granges_object$id}
 }
 \description{
 \code{read_rna_encode_caltech} reads a file containing promoter annotation

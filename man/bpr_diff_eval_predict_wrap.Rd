@@ -52,6 +52,8 @@ CpG density across the promoter region.}
 \item{opt_method}{The optimization method to be used. See
 \code{\link[stats]{optim}} for possible methods. Default is "CG".}
 
+\item{interm_features}{Logical, create intermediate features.}
+
 \item{opt_itnmax}{Optional argument giving the maximum number of iterations
 for the corresponding method. See \code{\link[stats]{optim}} for details.}
 

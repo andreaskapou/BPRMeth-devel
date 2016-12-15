@@ -18,7 +18,7 @@ A \code{\link[GenomicRanges]{GRanges}} object if \code{is_GRanges} is
 
   The GRanges object contains one additional metadata column: \itemize{ \item
   \code{cgi_id}: Unique ID of the CpG Island. } This column can be accessed
-  as follows: \code{granges_object$cgi_id}
+  as follows: \code{granges_object$id}
 }
 \description{
 \code{read_encode_cgi} reads a file containing CpG island (CGI) locations in
@@ -31,7 +31,7 @@ file <- "name_of_CGI_file")
 cgi_data <- read_encode_cgi(file)
 
 # Extract the CGI ID
-cgi_id <- cgi_data$cgi_id
+cgi_id <- cgi_data$id
 }
 
 }
