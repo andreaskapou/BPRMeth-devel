@@ -10,7 +10,7 @@
 #'
 #'   The GRanges object contains one additional metadata column: \itemize{ \item
 #'   \code{cgi_id}: Unique ID of the CpG Island. } This column can be accessed
-#'   as follows: \code{granges_object$cgi_id}
+#'   as follows: \code{granges_object$id}
 #'
 #' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
@@ -24,7 +24,7 @@
 #' cgi_data <- read_encode_cgi(file)
 #'
 #' # Extract the CGI ID
-#' cgi_id <- cgi_data$cgi_id
+#' cgi_id <- cgi_data$id
 #' }
 #'
 #' @export
@@ -33,11 +33,10 @@ read_encode_cgi <- function(file, is_GRanges = TRUE){
     cgi_data <- data.table::fread(input = file,
                               sep = "\t",
                               header = FALSE,
-                              col.names = c("chr", "start", "end", "cgi_id"))
+                              col.names = c("chr", "start", "end", "id"))
 
     N <- NROW(cgi_data)
-    cgi_id <- paste0("cgi_", seq(1, N))
-    cgi_data$cgi_id <- cgi_id
+    cgi_data$id <- paste0("cgi_", seq(1, N))
 
     if (is_GRanges){
         # Create a GRanges object -----------------------------------
@@ -45,7 +44,7 @@ read_encode_cgi <- function(file, is_GRanges = TRUE){
         cgi_data <- GenomicRanges::GRanges(seqnames = cgi_data$chr,
                            ranges = IRanges::IRanges(start = cgi_data$start,
                                                      end   = cgi_data$end),
-                           cgi_id = cgi_data$cgi_id)
+                           id = cgi_data$id)
     }
     message("Finished reading CGI file!\n")
     return(cgi_data)

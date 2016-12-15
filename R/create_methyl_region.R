@@ -23,6 +23,8 @@
 #'   the methylation change in a region. This is used to filter regions with no
 #'   methylation change.
 #' @param ignore_strand Logical, whether or not to ignore strand information.
+#' @param is_single_cell Logical, if we work with single cell data, then we keep
+#'   only the information of methylated or not for each CpG location.
 #' @param fmin Optional minimum range value for region location scaling. Under
 #'   this version, this parameter should be left to its default value.
 #' @param fmax Optional maximum range value for region location scaling. Under
@@ -35,7 +37,8 @@
 #'   columns contain the following information: \enumerate{ \item{ 1st column:
 #'   Contains the locations of CpGs relative to TSS. Note that the actual
 #'   locations are scaled to the (fmin, fmax) region. } \item{ 2nd column:
-#'   Contains the total reads of each CpG in the corresponding location.} \item{
+#'   Contains the total reads of each CpG in the corresponding location. NOTE
+#'   that for single-cell data this column is not stored in the object.} \item{
 #'   3rd column: Contains the methylated reads each CpG in the corresponding
 #'   location.} } } \item{ \code{prom_ind}: A vector storing the corresponding
 #'   promoter indices, so as to map each methylation region with its
@@ -63,7 +66,7 @@
 #' @export
 create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
                                  sd_thresh = 10e-02, ignore_strand = TRUE,
-                                 fmin = -1, fmax = 1){
+                                 is_single_cell = FALSE, fmin = -1, fmax = 1){
 
     message("Creating methylation regions ...")
     assertthat::assert_that(methods::is(bs_data, "GRanges"))
@@ -77,18 +80,24 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
         stop("Not enough matches between the BS-Seq and RNA-Seq data.")
     }
 
-
     # Convert data in vector format for faster lookup --------------
     query_hits <- S4Vectors::queryHits(overlaps)
     subj_hits  <- S4Vectors::subjectHits(overlaps)
 
-    # Indices of promoter locations
-    prom_loc   <- unique(query_hits)
+    prom_loc   <- unique(query_hits)     # Indices of promoter locations
     tss_loc    <- prom_region$tss        # TSS locations
+    prom_id    <- prom_region$id         # (Ensembl) IDs
     tss_strand <- as.character(GenomicRanges::strand(prom_region))
     cpg_loc    <- GenomicRanges::ranges(bs_data)@start  # CpG locations
-    tot_reads  <- bs_data$total_reads    # Total reads
-    meth_reads <- bs_data$meth_reads     # Methylated reads
+    meth_reads <- bs_data$meth_reads     # Methylated read
+
+    # If we work with single cell data
+    if (is_single_cell){
+      D <- 2  # Number of columns for each matrix in the list
+    } else{
+      tot_reads <- bs_data$total_reads   # Total reads
+      D <- 3
+    }
 
     # Extract upstream and downstream lengths in bps
     width        <- GenomicRanges::ranges(prom_region)@width[1]
@@ -102,11 +111,9 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
     }
 
     # Initialize variables -----------------------------------------
-    n            <- 1                         # Data points counter
     LABEL        <- FALSE                     # Flag variable
     meth_data    <- list()                    # List where data will be stored
     prom_counter <- 0                         # Promoter counter
-    prom_ind     <- vector(mode = "integer")  # Vector of promoter indices
     cpg_ind      <- vector(mode = "integer")  # Vector of CpG indices
     cpg_ind      <- c(cpg_ind, subj_hits[1])  # Add the first subject hit
 
@@ -120,13 +127,19 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
         }
 
         if (LABEL){
+            # TSS location for promoter 'promCount'
+            id <- prom_id[prom_loc[prom_counter]]
+            meth_data[[id]] <- NA
             # Only keep regions that have more than 'n' CpGs
             if (length(cpg_ind) > cpg_density){
                 # If sd of the methylation level is above threshold
-                if (stats::sd(meth_reads[cpg_ind] /
-                              tot_reads[cpg_ind]) > sd_thresh){
-                    # Promoter indices
-                    prom_ind <- c(prom_ind, prom_loc[prom_counter])
+                if(is_single_cell){
+                    obs_var <- stats::sd(meth_reads[cpg_ind])
+                }else{
+                    obs_var <- stats::sd(meth_reads[cpg_ind] /
+                                         tot_reads[cpg_ind])
+                }
+                if (obs_var > sd_thresh){
                     # Locations of CpGs in the genome
                     region <- cpg_loc[cpg_ind]
                     # TSS location for promoter 'promCount'
@@ -140,23 +153,26 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
                     # In the "-" strand the order of the locations should change
                     Order <- base::order(center_data)
 
-                    meth_data[[n]] <- matrix(0, nrow = length(cpg_ind),
-                                             ncol = 3)
+                    meth_data[[id]] <- matrix(0, nrow = length(cpg_ind),
+                                              ncol = D)
 
                     # Store normalized locations of methylated CpGs
-                    meth_data[[n]][, 1] <- .minmax_scaling(
-                            data = center_data[Order],
-                            xmin = upstream,
-                            xmax = downstream,
-                            fmin = fmin,
-                            fmax = fmax)
+                    meth_data[[id]][, 1] <- .minmax_scaling(
+                                                data = center_data[Order],
+                                                xmin = upstream,
+                                                xmax = downstream,
+                                                fmin = fmin,
+                                                fmax = fmax)
 
-                    # Store total reads in the corresponding locations
-                    meth_data[[n]][, 2] <- tot_reads[cpg_ind][Order]
-                    # Store methylated reads in the corresponding locations
-                    meth_data[[n]][, 3] <- meth_reads[cpg_ind][Order]
-                    # Increase data points counter
-                    n <- n + 1
+                    if (is_single_cell){
+                      # Store methylated reads in the corresponding locations
+                      meth_data[[id]][, 2] <- meth_reads[cpg_ind][Order]
+                    }else{
+                      # Store total reads in the corresponding locations
+                      meth_data[[id]][, 2] <- tot_reads[cpg_ind][Order]
+                      # Store methylated reads in the corresponding locations
+                      meth_data[[id]][, 3] <- meth_reads[cpg_ind][Order]
+                    }
                 }
             }
             LABEL   <- FALSE
@@ -164,11 +180,19 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
             cpg_ind <- c(cpg_ind, subj_hits[i])
         }
     }
-    methyl_region <- structure(list(meth_data = meth_data,
-                                    prom_ind = prom_ind),
-                               class = "methyl_region")
+    # Obtain promoters that did not have CpG coverage
+    ind <- which(is.na(match(seq_along(tss_loc), prom_loc)))
+    id <- prom_id[ind]
+    for (i in seq_along(ind)){
+        meth_data[[id[i]]] <- NA
+    }
+    # Get the indices of matches between annot data and meth_data
+    ind <- match(prom_id, names(meth_data))
+    # Reorder methylation data to match annot_data
+    meth_data <- meth_data[ind]
+
     message("Done!\n")
-    return(methyl_region)
+    return(meth_data)
 }
 
 

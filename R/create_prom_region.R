@@ -50,6 +50,8 @@ create_prom_region <- function(annot_data, chrom_size = NULL, upstream = -7000,
     up_prom   <- vector(mode = "integer", N)  # Start location in chromosome
     down_prom <- vector(mode = "integer", N)  # End location in chromosome
 
+    # Extract ID information
+    id <- annot_data$id # (Ensembl) IDs
     # Extract chromosome information
     annot_chr    <- as.character(annot_data@seqnames)
     # Extract strand information
@@ -93,10 +95,11 @@ create_prom_region <- function(annot_data, chrom_size = NULL, upstream = -7000,
     # Create GRanges object
     message("Creating GRanges object for promoter regions ...")
     prom_region <- GenomicRanges::GRanges(seqnames = annot_chr,
-                              ranges   = IRanges::IRanges(start = up_prom,
-                                                          end = down_prom),
-                              strand   = annot_strand,
-                              tss      = tss)
+                              ranges = IRanges::IRanges(start = up_prom,
+                                                        end = down_prom),
+                              strand = annot_strand,
+                              id     = id,
+                              tss    = tss)
     message("Finished creating promoter regions!\n")
     return(prom_region)
 }

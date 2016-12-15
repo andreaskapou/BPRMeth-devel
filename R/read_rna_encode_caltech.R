@@ -12,10 +12,10 @@
 #'   TRUE, otherwise a \code{\link[data.table]{data.table}} object.
 #'
 #'   The GRanges object contains three additional metadata columns: \itemize{
-#'   \item \code{ensembl_id}: Ensembl IDs of each gene promoter. \item
+#'   \item \code{id}: IDs (e.g. Ensembl) of each gene promoter. \item
 #'   \code{gene_name}: Gene name. \item \code{gene_fpkm}: Expression level in
 #'   FPKM. } These columns can be accessed as follows:
-#'   \code{granges_object$ensembl_id}
+#'   \code{granges_object$id}
 #'
 #' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
@@ -39,7 +39,7 @@ read_rna_encode_caltech <- function(file, chr_discarded = NULL,
              what = list("character",  # Reference chromosome
                          integer(),    # Start position in chromosome
                          integer(),    # End position in chromosome
-                         "character",  # Gene ENSEMBL id
+                         "character",  # Gene (ENSEMBL) id
                          numeric(),    # Expression level
                          "character",  # Strand : + or - or . for unknown
                          NULL,         # Source, e.g. HAVANA
@@ -54,7 +54,7 @@ read_rna_encode_caltech <- function(file, chr_discarded = NULL,
                                        start = data_raw[[2]],
                                        end = data_raw[[3]],
                                        strand = data_raw[[6]],
-                                       ensembl_id = data_raw[[4]],
+                                       id = data_raw[[4]],
                                        gene_expr = data_raw[[5]])
 
 
@@ -93,9 +93,9 @@ read_rna_encode_caltech <- function(file, chr_discarded = NULL,
                            strand = rna_data$strand,
                            ranges = IRanges::IRanges(start = rna_data$start,
                                                      end = rna_data$end),
-                           ensembl_id = rna_data$ensembl_id,
-                           gene_name  = rna_data$gene_name,
-                           gene_fpkm  = rna_data$fpkm)
+                           id        = rna_data$id,
+                           gene_name = rna_data$gene_name,
+                           gene_fpkm = rna_data$fpkm)
     }
     message("Finished reading RNA-Seq file!\n")
     return(rna_data)
