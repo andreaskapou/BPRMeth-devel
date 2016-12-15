@@ -210,3 +210,87 @@
     bs_data <- subset(bs_data, bs_data$total_reads <= max_bs_cov)
     return(bs_data)
 }
+
+
+# Perform Gibbs sampling for BPR model
+#
+# \code{.gibbs_bpr} performs Gibbs sampling for BPR model using auxiliary
+#  variable approach.
+#
+# @param H Design matrix
+# @param N Total number of trials
+# @param N1 Number of successes
+# @param N0 Number of failures
+# @param w_mle Maximum likelihood estimate for initial value
+# @param w_0_mean Prior mean vector for parameter w
+# @param w_0_cov Prior covariance matrix for parameter w
+# @param gibbs_nsim Number of Gibbs simulations
+#
+# @return The chain with the sampled w values from the posterior
+#
+.gibbs_bpr <- function(H, y, N, N0, N1, w_mle, w_0_mean, w_0_cov, gibbs_nsim){
+    # Matrix storing samples of the \w parameter
+    w_chain <- matrix(0, nrow = gibbs_nsim, ncol = length(w_mle))
+    w_chain[1, ] <- w_mle
+    w <- w_mle
+
+    # Compute posterior variance of w
+    prec_0 <- solve(w_0_cov)
+    V <- solve(prec_0 + crossprod(H, H))
+
+    # Initialize latent variable Z, from truncated normal
+    z <- rep(0, N)
+
+    # Check all the cases when you might have totally methylated or unmethylated
+    # read, then we cannot create 0 samples.
+    if (N0 == 0){
+        for (t in 2:gibbs_nsim) {
+            # Update Mean of z
+            mu_z <- H %*% w
+            # Draw latent variable z from its full conditional: z | \w, y, X
+            #z[y == 0] <- rtruncnorm(N0, mean = mu_z[y == 0], sd = 1, a = -Inf, b = 0)
+            z[y == 1] <- rtruncnorm(N1, mean = mu_z[y == 1], sd = 1, a = 0, b = Inf)
+
+            # Compute posterior mean of w
+            Mu <- V %*% (prec_0 %*% w_0_mean + crossprod(H, z))
+            # Draw variable \w from its full conditional: \w | z, X
+            w <- c(rmvnorm(1, Mu, V))
+
+            # Store the \theta draws
+            w_chain[t, ] <- w
+        }
+    }else if (N1 == 0){
+        for (t in 2:gibbs_nsim) {
+            # Update Mean of z
+            mu_z <- H %*% w
+            # Draw latent variable z from its full conditional: z | \w, y, X
+            z[y == 0] <- rtruncnorm(N0, mean = mu_z[y == 0], sd = 1, a = -Inf, b = 0)
+            #z[y == 1] <- rtruncnorm(N1, mean = mu_z[y == 1], sd = 1, a = 0, b = Inf)
+
+            # Compute posterior mean of w
+            Mu <- V %*% (prec_0 %*% w_0_mean + crossprod(H, z))
+            # Draw variable \w from its full conditional: \w | z, X
+            w <- c(rmvnorm(1, Mu, V))
+
+            # Store the \theta draws
+            w_chain[t, ] <- w
+        }
+    }else{
+        for (t in 2:gibbs_nsim) {
+            # Update Mean of z
+            mu_z <- H %*% w
+            # Draw latent variable z from its full conditional: z | \w, y, X
+            z[y == 0] <- rtruncnorm(N0, mean = mu_z[y == 0], sd = 1, a = -Inf, b = 0)
+            z[y == 1] <- rtruncnorm(N1, mean = mu_z[y == 1], sd = 1, a = 0, b = Inf)
+
+            # Compute posterior mean of w
+            Mu <- V %*% (prec_0 %*% w_0_mean + crossprod(H, z))
+            # Draw variable \w from its full conditional: \w | z, X
+            w <- c(rmvnorm(1, Mu, V))
+
+            # Store the \theta draws
+            w_chain[t, ] <- w
+        }
+    }
+    return(w_chain)
+}
