@@ -31,7 +31,10 @@ Imports: assertthat,
     IRanges,
     S4Vectors,
     data.table,
-    graphics
+    graphics,
+    caret,
+    mvtnorm,
+    truncnorm
 Suggests: testthat,
     knitr,
     rmarkdown,
