@@ -34,7 +34,8 @@ Imports: assertthat,
     graphics,
     caret,
     mvtnorm,
-    truncnorm
+    truncnorm,
+    MCMCpack
 Suggests: testthat,
     knitr,
     rmarkdown,
