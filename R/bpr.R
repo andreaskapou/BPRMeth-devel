@@ -28,8 +28,14 @@
 # @importFrom stats pnorm dbinom
 #
 .bpr_likelihood <- function(w, H, data, lambda = 1/2, is_NLL = FALSE){
-    total <- data[, 1]
-    succ  <- data[, 2]
+    # If the data is matrix, we have Binomial observations
+    if (is.matrix(data)){
+        total <- data[, 1]
+        succ  <- data[, 2]
+    }else{ # ... otherwise we have Bernoulli observations.
+        succ <- data
+        total <- rep(1, length(succ))
+    }
 
     # Predictions of the target variables
     # Compute the cdf of N(0,1) distribution (i.e. probit function)
@@ -37,12 +43,12 @@
 
     # In extreme cases where probit is 0 or 1, subtract a tiny number
     # so we can evaluate the log(0) when computing the Binomial
-    Phi[which(Phi > (1 - 1e-289))] <- 1 - 1e-289
-    Phi[which(Phi < 1e-289)] <- 1e-289
+    Phi[which(Phi > (1 - 1e-15))] <- 1 - 1e-15
+    Phi[which(Phi < 1e-15)] <- 1e-15
 
     # Compute the log likelihood
     res <- sum(dbinom(x = succ, size = total, prob = Phi, log = TRUE))
-        #- lambda * t(w) %*% w
+
     M <- length(w)
     if (M > 1){
         res <- res - lambda * t(w[2:M]) %*% w[2:M]
@@ -83,12 +89,12 @@
 
     # In extreme cases where probit is 0 or 1, subtract a tiny number
     # so we can evaluate the log(0) when computing the Binomial
-    Phi[which(Phi > (1 - 1e-289))] <- 1 - 1e-289
-    Phi[which(Phi < 1e-289)] <- 1e-289
+    Phi[which(Phi > (1 - 1e-15))] <- 1 - 1e-15
+    Phi[which(Phi < 1e-15)] <- 1e-15
 
     # Compute the density of a N(0,1) distribution
     N <- dnorm(g)
-    N[which(N < 1e-289)] <- 1e-289
+    N[which(N < 1e-15)] <- 1e-15
 
     # Compute the gradient vector w.r.t the coefficients w
     gr <- (N * (succ * (1 / Phi) - (total - succ) * (1 / (1 - Phi)))) %*% H
