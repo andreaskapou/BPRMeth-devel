@@ -34,7 +34,7 @@ plot_fitted_profiles <- function(region, X, fit_prof, fit_mean = NULL,
 
     graphics::par(cex=1.05, mai=c(1.37,1.37,.7,.3) )
     x <- X[[region]][,1]
-    if (NCOL(X[[region]] == 3)){
+    if (NCOL(X[[region]]) == 3){
         y <- X[[region]][,3]/X[[region]][,2]
     }else{
         y <- X[[region]][,2]
