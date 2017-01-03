@@ -246,7 +246,11 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                                 # Draw variable \w from its full conditional: \w | z, X
                                 w_inner[tt, ] <- c(rmvnorm(1, Mu, V))
                             }
-                            w[n, , k] <- colMeans(w_inner[-(1:(gibbs_inner_nsim/2)), ])
+                            if (NCOL(w_inner) > 1){
+                              w[n, , k] <- colMeans(w_inner[-(1:(gibbs_inner_nsim/2)), ])
+                            }else{
+                              w[n, , k] <- mean(w_inner[-(1:(gibbs_inner_nsim/2)), ])
+                            }
                         }else{
                             # Update Mean of z
                             mu_z <- H %*% w[n, , k]
