@@ -121,6 +121,11 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
         # If query hits is the same as the previous one
         if (query_hits[i] == query_hits[i - 1]){
             cpg_ind <- c(cpg_ind, subj_hits[i])  # Add subject hit
+            # In case we have the last region
+            if (i == NROW(query_hits)){
+              prom_counter <- prom_counter + 1  # Increase promoter counter
+              LABEL <- TRUE
+            }
         }else{
             prom_counter <- prom_counter + 1  # Increase promoter counter
             LABEL <- TRUE
@@ -157,7 +162,7 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
                                               ncol = D)
 
                     # Store normalized locations of methylated CpGs
-                    meth_data[[id]][, 1] <- .minmax_scaling(
+                    meth_data[[id]][, 1] <- BPRMeth:::.minmax_scaling(
                                                 data = center_data[Order],
                                                 xmin = upstream,
                                                 xmax = downstream,
