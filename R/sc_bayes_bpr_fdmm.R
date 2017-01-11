@@ -83,7 +83,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
         w_0_mean <- rep(0, M)
     }
     if (is.null(w_0_cov)){
-        w_0_cov <- diag(3, M)
+        w_0_cov <- diag(2, M)
     }
     # Invert covariance matrix to get the precision matrix
     prec_0 <- solve(w_0_cov)
@@ -127,9 +127,6 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                                              .design_matrix(x = basis,
                                                             obs = y[, 1])$H,
                                          mc.cores = no_cores)
-            # Stop parallel execution
-            parallel::stopCluster(cl)
-            doParallel::stopImplicitCluster()
         }else{
             des_mat[[i]][ind[[i]]] <- lapply(X = x[[i]][ind[[i]]],
                                              FUN = function(y)
@@ -137,6 +134,11 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                                                                 obs = y[, 1])$H)
         }
         ##des_mat[[i]][-ind[[i]]] <- NA
+    }
+    if (is_parallel){
+      # Stop parallel execution
+      parallel::stopCluster(cl)
+      doParallel::stopImplicitCluster()
     }
 
     message("Starting Gibbs sampling...")
@@ -166,7 +168,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
             w_pdf[, k] <- log(pi_k[k]) + w_pdf[, k]
         }
         # Use the logSumExp trick for numerical stability
-        Z <- apply(w_pdf, 1, .log_sum_exp)
+        Z <- apply(w_pdf, 1, BPRMeth:::.log_sum_exp)
         # Get actual posterior probabilities, i.e. responsibilities
         post_prob <- exp(w_pdf - Z)
         # Evaluate and store the NLL
@@ -244,9 +246,17 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                                 # Compute posterior mean of w
                                 Mu <- V %*% (w_0_prec_0 + crossprod(H, z))
                                 # Draw variable \w from its full conditional: \w | z, X
-                                w_inner[tt, ] <- c(rmvnorm(1, Mu, V))
+                                if (M == 1){
+                                  w_inner[tt, ] <- c(rnorm(n = 1, mean = Mu, sd = V))
+                                }else{
+                                  w_inner[tt, ] <- c(rmvnorm(n = 1, mean = Mu, sigma = V))
+                                }
                             }
-                            w[n, , k] <- colMeans(w_inner[-(1:(gibbs_inner_nsim/2)), ])
+                            if (M == 1){
+                                w[n, , k] <- mean(w_inner[-(1:(gibbs_inner_nsim/2)), ])
+                            }else{
+                                w[n, , k] <- colMeans(w_inner[-(1:(gibbs_inner_nsim/2)), ])
+                            }
                         }else{
                             # Update Mean of z
                             mu_z <- H %*% w[n, , k]
@@ -264,7 +274,11 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                             # Compute posterior mean of w
                             Mu <- V %*% (w_0_prec_0 + crossprod(H, z))
                             # Draw variable \w from its full conditional: \w | z, X
-                            w[n, , k] <- c(rmvnorm(1, Mu, V))
+                            if (M == 1){
+                                w[n, , k] <- c(rnorm(n = 1, mean = Mu, sd = V))
+                            }else{
+                                w[n, , k] <- c(rmvnorm(n = 1, mean = Mu, sigma = V))
+                            }
                         }
                     }
                 }

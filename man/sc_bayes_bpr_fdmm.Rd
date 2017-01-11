@@ -54,6 +54,6 @@ sample from the augmented BPR model.}
 \code{sc_bayes_bpr_fdmm} implements the Gibbs sampling algorithm for
 performing clustering of single cells based on their DNA methylation
 profiles, where the observation model is the Bernoulli distributed Probit
-Regression likelihood, \code{\link{.bpr_likelihood}}.
+Regression likelihood.
 }
 
