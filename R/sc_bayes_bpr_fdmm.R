@@ -323,7 +323,11 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
     ##-----------------------------------------------
     message("Computing summary statistics...")
     # Compute summary statistics from Gibbs simulation
-    pi_post <- colMeans(pi_draws[gibbs_burn_in:gibbs_nsim, ])
+    if (K == 1){
+      pi_post <- mean(pi_draws[gibbs_burn_in:gibbs_nsim, ])
+    }else{
+      pi_post <- colMeans(pi_draws[gibbs_burn_in:gibbs_nsim, ])
+    }
     C_post <- C_matrix / (gibbs_nsim - gibbs_burn_in)
     w_post <- array(0, dim = c(N, M, K))
     for (n in 1:N){
