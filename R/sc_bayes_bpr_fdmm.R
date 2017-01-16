@@ -29,7 +29,7 @@
 #' @param no_cores Number of cores to be used, default is max_no_cores - 1.
 #' @param is_verbose Logical, print results during EM iterations
 #'
-#' @importFrom stats rmultinom
+#' @importFrom stats rmultinom rnorm
 #' @importFrom MCMCpack rdirichlet
 #' @importFrom truncnorm rtruncnorm
 #' @importFrom mvtnorm rmvnorm
@@ -94,9 +94,23 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
     w_pdf        <- matrix(0, nrow = I, ncol = K)  # Store weighted PDFs
     post_prob    <- matrix(0, nrow = I, ncol = K)  # Hold responsibilities
     C_i          <- matrix(0, nrow = I, ncol = K)  # Mixture components
+    C_i_prev     <- C_i # Keep previous mixture components
     C_matrix     <- matrix(0, nrow = I, ncol = K)  # Total Mixture components
     NLL          <- vector(mode = "numeric", length = gibbs_nsim)
     NLL[1]       <- 1e+100
+
+    H <- list()
+    y <- list()
+    z <- list()
+    V <- list()
+    len_y <- matrix(0, nrow = K, ncol = N)
+    sum_y <- matrix(0, nrow = K, ncol = N)
+    for (k in 1:K){
+        H[[k]] <- vector("list", N)
+        y[[k]] <- vector("list", N)
+        z[[k]] <- vector("list", N)
+        V[[k]] <- vector("list", N)
+    }
 
     # Store mixing proportions draws
     pi_draws <- matrix(NA_real_, nrow = gibbs_nsim, ncol = K)
@@ -123,10 +137,10 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
         # TODO: Make this function faster?
         if (is_parallel){
             des_mat[[i]][ind[[i]]] <- parallel::mclapply(X = x[[i]][ind[[i]]],
-                                         FUN = function(y)
-                                             .design_matrix(x = basis,
-                                                            obs = y[, 1])$H,
-                                         mc.cores = no_cores)
+                                                         FUN = function(y)
+                                                             .design_matrix(x = basis,
+                                                                            obs = y[, 1])$H,
+                                                         mc.cores = no_cores)
         }else{
             des_mat[[i]][ind[[i]]] <- lapply(X = x[[i]][ind[[i]]],
                                              FUN = function(y)
@@ -136,9 +150,9 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
         ##des_mat[[i]][-ind[[i]]] <- NA
     }
     if (is_parallel){
-      # Stop parallel execution
-      parallel::stopCluster(cl)
-      doParallel::stopImplicitCluster()
+        # Stop parallel execution
+        parallel::stopCluster(cl)
+        doParallel::stopImplicitCluster()
     }
 
     message("Starting Gibbs sampling...")
@@ -155,20 +169,20 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
             for (i in 1:I){
                 # Apply only to regions with CpG coverage
                 w_pdf[i, k] <- sum(vapply(X   = ind[[i]],
-                                  FUN = function(y)
-                                      .bpr_likelihood(w = w[y, , k],
-                                                      H = des_mat[[i]][[y]],
-                                                      data = x[[i]][[y]][, 2],
-                                                      lambda = lambda,
-                                                      is_NLL = FALSE),
-                                  FUN.VALUE = numeric(1),
-                                  USE.NAMES = FALSE))
+                                          FUN = function(y)
+                                              .bpr_likelihood(w = w[y, , k],
+                                                              H = des_mat[[i]][[y]],
+                                                              data = x[[i]][[y]][, 2],
+                                                              lambda = lambda,
+                                                              is_NLL = FALSE),
+                                          FUN.VALUE = numeric(1),
+                                          USE.NAMES = FALSE))
                 # TODO: Do we need to do anything with regions with no CpGs??
             }
             w_pdf[, k] <- log(pi_k[k]) + w_pdf[, k]
         }
         # Use the logSumExp trick for numerical stability
-        Z <- apply(w_pdf, 1, BPRMeth:::.log_sum_exp)
+        Z <- apply(w_pdf, 1, .log_sum_exp)
         # Get actual posterior probabilities, i.e. responsibilities
         post_prob <- exp(w_pdf - Z)
         # Evaluate and store the NLL
@@ -179,6 +193,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
         for (i in 1:I){ # Sample one point from a Multinomial i.e. ~ Discrete
             C_i[i, ] <- rmultinom(n = 1, size = 1, post_prob[i, ])
         }
+        # TODO: Should we keep all data
         if (t > gibbs_burn_in){
             C_matrix <- C_matrix + C_i
         }
@@ -196,95 +211,100 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
         for (k in 1:K){
             # Which cells are assigned to cluster k
             C_k_idx <- which(C_i[, k] == 1)
-
             # TODO: Handle cases when clusters are empty!!
-            if (length(C_k_idx) > 0){
+            if (length(C_k_idx) == 0){
+                message("Warning: Empty cluster...")
+                next # TODO: How to handle empty clusters
+            }
+
+            # Check if current cluster assignments are not equal to previous ones
+            if (!identical(C_i[, k], C_i_prev[, k])){
+                message(t, ": Not identical")
                 # Iterate over each promoter region
                 for (n in 1:N){
                     # Initialize empty vector for observed methylation data
-                    y <- vector(mode = "integer")
+                    y[[k]][[n]] <- vector(mode = "integer")
                     # Concatenate the nth promoter from all cells in cluster k
-                    H <- do.call(rbind, lapply(des_mat, "[[", n)[C_k_idx])
+                    H[[k]][[n]] <- do.call(rbind, lapply(des_mat, "[[", n)[C_k_idx])
 
                     # TODO: Check when we have empty promoters....
-                    if (is.null(H)){
+                    if (is.null(H[[k]][[n]])){
                         empty_region[n, k] <- 1
                     }else{
                         # Obtain the corresponding methylation levels
                         for (cell in seq_along(C_k_idx)){
                             obs <- x[[C_k_idx[cell]]][[n]]
                             if (length(obs) > 1){
-                                y <- c(y, obs[, 2])
+                                y[[k]][[n]] <- c(y[[k]][[n]], obs[, 2])
                             }
                         }
                         # Precompute for faster computations
-                        len_y <- length(y)
-                        sum_y <- sum(y)
-                        z <- rep(NA_real_, len_y)
+                        len_y[k, n] <- length(y[[k]][[n]])
+                        sum_y[k, n] <- sum(y[[k]][[n]])
+                        z[[k]][[n]] <- rep(NA_real_, len_y[k, n])
 
                         # Compute posterior variance of w_nk
-                        V <- solve(prec_0 + crossprod(H, H))
-
-                        # Perform Gibbs to sample from the augmented BPR model
-                        if (inner_gibbs){
-                            w_inner <- matrix(0, nrow = gibbs_inner_nsim, ncol = M)
-                            w_inner[1, ] <- w[n, , k]
-                            for (tt in 2:gibbs_inner_nsim){
-                                # Update Mean of z
-                                mu_z <- H %*% w_inner[tt - 1, ]
-                                # Draw latent variable z from its full conditional: z | w, y, X
-                                if (sum_y == 0){
-                                    z <- rtruncnorm(len_y, mean = mu_z, sd = 1, a = -Inf, b = 0)
-                                }else if (sum_y == len_y){
-                                    z <- rtruncnorm(sum_y, mean = mu_z, sd = 1, a = 0, b = Inf)
-                                }else{
-                                    z[y == 1] <- rtruncnorm(sum_y, mean = mu_z[y == 1], sd = 1,
-                                                            a = 0, b = Inf)
-                                    z[y == 0] <- rtruncnorm(len_y - sum_y, mean = mu_z[y == 0],
-                                                            sd = 1, a = -Inf, b = 0)
-                                }
-                                # Compute posterior mean of w
-                                Mu <- V %*% (w_0_prec_0 + crossprod(H, z))
-                                # Draw variable \w from its full conditional: \w | z, X
-                                if (M == 1){
-                                  w_inner[tt, ] <- c(rnorm(n = 1, mean = Mu, sd = V))
-                                }else{
-                                  w_inner[tt, ] <- c(rmvnorm(n = 1, mean = Mu, sigma = V))
-                                }
-                            }
-                            if (M == 1){
-                                w[n, , k] <- mean(w_inner[-(1:(gibbs_inner_nsim/2)), ])
-                            }else{
-                                w[n, , k] <- colMeans(w_inner[-(1:(gibbs_inner_nsim/2)), ])
-                            }
-                        }else{
-                            # Update Mean of z
-                            mu_z <- H %*% w[n, , k]
-                            # Draw latent variable z from its full conditional: z | w, y, X
-                            if (sum_y == 0){
-                                z <- rtruncnorm(len_y, mean = mu_z, sd = 1, a = -Inf, b = 0)
-                            }else if (sum_y == len_y){
-                                z <- rtruncnorm(sum_y, mean = mu_z, sd = 1, a = 0, b = Inf)
-                            }else{
-                                z[y == 1] <- rtruncnorm(sum_y, mean = mu_z[y == 1], sd = 1,
-                                                        a = 0, b = Inf)
-                                z[y == 0] <- rtruncnorm(len_y - sum_y, mean = mu_z[y == 0],
-                                                        sd = 1, a = -Inf, b = 0)
-                            }
-                            # Compute posterior mean of w
-                            Mu <- V %*% (w_0_prec_0 + crossprod(H, z))
-                            # Draw variable \w from its full conditional: \w | z, X
-                            if (M == 1){
-                                w[n, , k] <- c(rnorm(n = 1, mean = Mu, sd = V))
-                            }else{
-                                w[n, , k] <- c(rmvnorm(n = 1, mean = Mu, sigma = V))
-                            }
-                        }
+                        V[[k]][[n]] <- solve(prec_0 + crossprod(H[[k]][[n]], H[[k]][[n]]))
                     }
                 }
-            }else{
-                message("Warning: Empty cluster...")
-                next # TODO: How to handle empty clusters
+            }
+
+            for (n in 1:N){
+                # Perform Gibbs to sample from the augmented BPR model
+                if (inner_gibbs){
+                    w_inner <- matrix(0, nrow = gibbs_inner_nsim, ncol = M)
+                    w_inner[1, ] <- w[n, , k]
+                    for (tt in 2:gibbs_inner_nsim){
+                        # Update Mean of z
+                        mu_z <- H[[k]][[n]] %*% w_inner[tt - 1, ]
+                        # Draw latent variable z from its full conditional: z | w, y, X
+                        if (sum_y[k, n] == 0){
+                            z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z, sd = 1, a = -Inf, b = 0)
+                        }else if (sum_y[k, n] == len_y[k, n]){
+                            z[[k]][[n]] <- rtruncnorm(sum_y[k, n], mean = mu_z, sd = 1, a = 0, b = Inf)
+                        }else{
+                            z[[k]][[n]][y[[k]][[n]] == 1] <- rtruncnorm(sum_y[k, n], mean = mu_z[y[[k]][[n]] == 1], sd = 1,
+                                                              a = 0, b = Inf)
+                            z[[k]][[n]][y[[k]][[n]] == 0] <- rtruncnorm(len_y[k, n] - sum_y[k, n], mean = mu_z[y[[k]][[n]] == 0],
+                                                              sd = 1, a = -Inf, b = 0)
+                        }
+                        # Compute posterior mean of w
+                        Mu <- V[[k]][[n]] %*% (w_0_prec_0 + crossprod(H[[k]][[n]], z[[k]][[n]]))
+                        # Draw variable \w from its full conditional: \w | z, X
+                        if (M == 1){
+                            w_inner[tt, ] <- c(rnorm(n = 1, mean = Mu, sd = V[[k]][[n]]))
+                        }else{
+                            w_inner[tt, ] <- c(rmvnorm(n = 1, mean = Mu, sigma = V[[k]][[n]]))
+                        }
+                    }
+                    if (M == 1){
+                        w[n, , k] <- mean(w_inner[-(1:(gibbs_inner_nsim/2)), ])
+                    }else{
+                        w[n, , k] <- colMeans(w_inner[-(1:(gibbs_inner_nsim/2)), ])
+                    }
+                }else{
+                    # Update Mean of z
+                    mu_z <- H[[k]][[n]] %*% w[n, , k]
+                    # Draw latent variable z from its full conditional: z | w, y, X
+                    if (sum_y == 0){
+                        z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z, sd = 1, a = -Inf, b = 0)
+                    }else if (sum_y[k, n] == len_y[k, n]){
+                        z[[k]][[n]] <- rtruncnorm(sum_y[k, n], mean = mu_z, sd = 1, a = 0, b = Inf)
+                    }else{
+                        z[[k]][[n]][y[[k]][[n]] == 1] <- rtruncnorm(sum_y[k, n], mean = mu_z[y[[k]][[n]] == 1], sd = 1,
+                                                          a = 0, b = Inf)
+                        z[[k]][[n]][y[[k]][[n]] == 0] <- rtruncnorm(len_y[k, n] - sum_y[k, n], mean = mu_z[y[[k]][[n]] == 0],
+                                                          sd = 1, a = -Inf, b = 0)
+                    }
+                    # Compute posterior mean of w
+                    Mu <- V[[k]][[n]] %*% (w_0_prec_0 + crossprod(H[[k]][[n]], z[[k]][[n]]))
+                    # Draw variable \w from its full conditional: \w | z, X
+                    if (M == 1){
+                        w[n, , k] <- c(rnorm(n = 1, mean = Mu, sd = V[[k]][[n]]))
+                    }else{
+                        w[n, , k] <- c(rmvnorm(n = 1, mean = Mu, sigma = V[[k]][[n]]))
+                    }
+                }
             }
         }
 
@@ -311,9 +331,11 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                 }
             }
         }
-
+        # Make current cluster indices same as previous
+        C_i_prev <- C_i
         # Store the coefficient draw
         w_draws[[t]] <- w
+
         setTxtProgressBar(pb,t)
     }
     close(pb)
@@ -324,9 +346,9 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
     message("Computing summary statistics...")
     # Compute summary statistics from Gibbs simulation
     if (K == 1){
-      pi_post <- mean(pi_draws[gibbs_burn_in:gibbs_nsim, ])
+        pi_post <- mean(pi_draws[gibbs_burn_in:gibbs_nsim, ])
     }else{
-      pi_post <- colMeans(pi_draws[gibbs_burn_in:gibbs_nsim, ])
+        pi_post <- colMeans(pi_draws[gibbs_burn_in:gibbs_nsim, ])
     }
     C_post <- C_matrix / (gibbs_nsim - gibbs_burn_in)
     w_post <- array(0, dim = c(N, M, K))
