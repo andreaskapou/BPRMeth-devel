@@ -137,10 +137,10 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
         # TODO: Make this function faster?
         if (is_parallel){
             des_mat[[i]][ind[[i]]] <- parallel::mclapply(X = x[[i]][ind[[i]]],
-                                                         FUN = function(y)
-                                                             .design_matrix(x = basis,
-                                                                            obs = y[, 1])$H,
-                                                         mc.cores = no_cores)
+                                             FUN = function(y)
+                                                 .design_matrix(x = basis,
+                                                                obs = y[, 1])$H,
+                                             mc.cores = no_cores)
         }else{
             des_mat[[i]][ind[[i]]] <- lapply(X = x[[i]][ind[[i]]],
                                              FUN = function(y)
@@ -169,14 +169,14 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
             for (i in 1:I){
                 # Apply only to regions with CpG coverage
                 w_pdf[i, k] <- sum(vapply(X   = ind[[i]],
-                                          FUN = function(y)
-                                              .bpr_likelihood(w = w[y, , k],
-                                                              H = des_mat[[i]][[y]],
-                                                              data = x[[i]][[y]][, 2],
-                                                              lambda = lambda,
-                                                              is_NLL = FALSE),
-                                          FUN.VALUE = numeric(1),
-                                          USE.NAMES = FALSE))
+                                    FUN = function(y)
+                                        .bpr_likelihood(w = w[y, , k],
+                                                        H = des_mat[[i]][[y]],
+                                                        data = x[[i]][[y]][, 2],
+                                                        lambda = lambda,
+                                                        is_NLL = FALSE),
+                                    FUN.VALUE = numeric(1),
+                                    USE.NAMES = FALSE))
                 # TODO: Do we need to do anything with regions with no CpGs??
             }
             w_pdf[, k] <- log(pi_k[k]) + w_pdf[, k]
@@ -207,7 +207,6 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
 
         # Matrix to keep promoters with no CpG coverage
         empty_region <- matrix(0, nrow = N, ncol = K)
-
         for (k in 1:K){
             # Which cells are assigned to cluster k
             C_k_idx <- which(C_i[, k] == 1)
@@ -217,15 +216,16 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                 next # TODO: How to handle empty clusters
             }
 
-            # Check if current cluster assignments are not equal to previous ones
+            # Check if current clusters ids are not equal to previous ones
             if (!identical(C_i[, k], C_i_prev[, k])){
                 message(t, ": Not identical")
                 # Iterate over each promoter region
                 for (n in 1:N){
                     # Initialize empty vector for observed methylation data
-                    y[[k]][[n]] <- vector(mode = "integer")
+                    yy <- vector(mode = "integer")
                     # Concatenate the nth promoter from all cells in cluster k
-                    H[[k]][[n]] <- do.call(rbind, lapply(des_mat, "[[", n)[C_k_idx])
+                    H[[k]][[n]] <- do.call(rbind,
+                                           lapply(des_mat, "[[", n)[C_k_idx])
 
                     # TODO: Check when we have empty promoters....
                     if (is.null(H[[k]][[n]])){
@@ -235,16 +235,18 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                         for (cell in seq_along(C_k_idx)){
                             obs <- x[[C_k_idx[cell]]][[n]]
                             if (length(obs) > 1){
-                                y[[k]][[n]] <- c(y[[k]][[n]], obs[, 2])
+                                yy <- c(yy, obs[, 2])
                             }
                         }
                         # Precompute for faster computations
-                        len_y[k, n] <- length(y[[k]][[n]])
-                        sum_y[k, n] <- sum(y[[k]][[n]])
+                        len_y[k, n] <- length(yy)
+                        sum_y[k, n] <- sum(yy)
+                        y[[k]][[n]] <- yy
                         z[[k]][[n]] <- rep(NA_real_, len_y[k, n])
 
                         # Compute posterior variance of w_nk
-                        V[[k]][[n]] <- solve(prec_0 + crossprod(H[[k]][[n]], H[[k]][[n]]))
+                        V[[k]][[n]] <- solve(prec_0 + crossprod(H[[k]][[n]],
+                                                                H[[k]][[n]]))
                     }
                 }
             }
@@ -257,24 +259,28 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                     for (tt in 2:gibbs_inner_nsim){
                         # Update Mean of z
                         mu_z <- H[[k]][[n]] %*% w_inner[tt - 1, ]
-                        # Draw latent variable z from its full conditional: z | w, y, X
+                        # Draw latent variable z from z | w, y, X
                         if (sum_y[k, n] == 0){
-                            z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z, sd = 1, a = -Inf, b = 0)
+                            z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z,
+                                                      sd = 1, a = -Inf, b = 0)
                         }else if (sum_y[k, n] == len_y[k, n]){
-                            z[[k]][[n]] <- rtruncnorm(sum_y[k, n], mean = mu_z, sd = 1, a = 0, b = Inf)
+                            z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z,
+                                                      sd = 1, a = 0, b = Inf)
                         }else{
-                            z[[k]][[n]][y[[k]][[n]] == 1] <- rtruncnorm(sum_y[k, n], mean = mu_z[y[[k]][[n]] == 1], sd = 1,
-                                                              a = 0, b = Inf)
-                            z[[k]][[n]][y[[k]][[n]] == 0] <- rtruncnorm(len_y[k, n] - sum_y[k, n], mean = mu_z[y[[k]][[n]] == 0],
-                                                              sd = 1, a = -Inf, b = 0)
+                            z[[k]][[n]][y[[k]][[n]] == 1] <- rtruncnorm(sum_y[k, n],
+                                    mean = mu_z[y[[k]][[n]] == 1], sd = 1, a = 0, b = Inf)
+                            z[[k]][[n]][y[[k]][[n]] == 0] <- rtruncnorm(len_y[k, n] - sum_y[k, n],
+                                    mean = mu_z[y[[k]][[n]] == 0], sd = 1, a = -Inf, b = 0)
                         }
                         # Compute posterior mean of w
                         Mu <- V[[k]][[n]] %*% (w_0_prec_0 + crossprod(H[[k]][[n]], z[[k]][[n]]))
                         # Draw variable \w from its full conditional: \w | z, X
                         if (M == 1){
-                            w_inner[tt, ] <- c(rnorm(n = 1, mean = Mu, sd = V[[k]][[n]]))
+                            w_inner[tt, ] <- c(rnorm(n = 1, mean = Mu,
+                                                     sd = V[[k]][[n]]))
                         }else{
-                            w_inner[tt, ] <- c(rmvnorm(n = 1, mean = Mu, sigma = V[[k]][[n]]))
+                            w_inner[tt, ] <- c(rmvnorm(n = 1, mean = Mu,
+                                                       sigma = V[[k]][[n]]))
                         }
                     }
                     if (M == 1){
@@ -286,23 +292,28 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                     # Update Mean of z
                     mu_z <- H[[k]][[n]] %*% w[n, , k]
                     # Draw latent variable z from its full conditional: z | w, y, X
-                    if (sum_y == 0){
-                        z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z, sd = 1, a = -Inf, b = 0)
+                    if (sum_y[k, n] == 0){
+                        z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z,
+                                                  sd = 1, a = -Inf, b = 0)
                     }else if (sum_y[k, n] == len_y[k, n]){
-                        z[[k]][[n]] <- rtruncnorm(sum_y[k, n], mean = mu_z, sd = 1, a = 0, b = Inf)
+                        z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z,
+                                                  sd = 1, a = 0, b = Inf)
                     }else{
-                        z[[k]][[n]][y[[k]][[n]] == 1] <- rtruncnorm(sum_y[k, n], mean = mu_z[y[[k]][[n]] == 1], sd = 1,
-                                                          a = 0, b = Inf)
-                        z[[k]][[n]][y[[k]][[n]] == 0] <- rtruncnorm(len_y[k, n] - sum_y[k, n], mean = mu_z[y[[k]][[n]] == 0],
-                                                          sd = 1, a = -Inf, b = 0)
+                        z[[k]][[n]][y[[k]][[n]] == 1] <- rtruncnorm(sum_y[k, n],
+                                mean = mu_z[y[[k]][[n]] == 1], sd = 1, a = 0, b = Inf)
+                        z[[k]][[n]][y[[k]][[n]] == 0] <- rtruncnorm(len_y[k, n] - sum_y[k, n],
+                                mean = mu_z[y[[k]][[n]] == 0], sd = 1, a = -Inf, b = 0)
                     }
                     # Compute posterior mean of w
-                    Mu <- V[[k]][[n]] %*% (w_0_prec_0 + crossprod(H[[k]][[n]], z[[k]][[n]]))
+                    Mu <- V[[k]][[n]] %*% (w_0_prec_0 + crossprod(H[[k]][[n]],
+                                                                  z[[k]][[n]]))
                     # Draw variable \w from its full conditional: \w | z, X
                     if (M == 1){
-                        w[n, , k] <- c(rnorm(n = 1, mean = Mu, sd = V[[k]][[n]]))
+                        w[n, , k] <- c(rnorm(n = 1, mean = Mu,
+                                             sd = V[[k]][[n]]))
                     }else{
-                        w[n, , k] <- c(rmvnorm(n = 1, mean = Mu, sigma = V[[k]][[n]]))
+                        w[n, , k] <- c(rmvnorm(n = 1, mean = Mu,
+                                               sigma = V[[k]][[n]]))
                     }
                 }
             }
