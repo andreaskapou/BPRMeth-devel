@@ -252,6 +252,10 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
             }
 
             for (n in 1:N){
+                # In case we have no CpG data in this promoter
+                if (is.null(H[[k]][[n]])){
+                    next
+                }
                 # Perform Gibbs to sample from the augmented BPR model
                 if (inner_gibbs){
                     w_inner <- matrix(0, nrow = gibbs_inner_nsim, ncol = M)
