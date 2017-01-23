@@ -141,13 +141,21 @@
 .sum_weighted_bpr_lik <- function(w, x, des_mat, post_prob, lambda = 1/2,
                                   is_NLL = TRUE){
     N <- length(x)
-
+    
+    # Cases when we have Binomial or Bernoulli data
+    if (NCOL(x[[1]]) == 3){
+      # Methylation data
+      cols <- 2:3
+    }else{
+      cols <- 2
+    }
+    
     # TODO: Create tests
     # For each element in x, evaluate the BPR log likelihood
     res <- vapply(X   = 1:N,
                   FUN = function(y) .bpr_likelihood(w = w,
                                                     H = des_mat[[y]]$H,
-                                                    data = x[[y]][, 2:3],
+                                                    data = x[[y]][, cols],
                                                     lambda = lambda,
                                                     is_NLL = is_NLL),
                   FUN.VALUE = numeric(1),
@@ -177,12 +185,20 @@
                                    is_NLL = TRUE){
     N <- length(x)
 
+    # Cases when we have Binomial or Bernoulli data
+    if (NCOL(x[[1]]) == 3){
+      # Methylation data
+      cols <- 2:3
+    }else{
+      cols <- 2
+    }
+    
     # TODO: Create tests
     # For each element in x, evaluate the gradient of the BPR log likelihood
     res <- vapply(X   = 1:N,
                   FUN = function(y) .bpr_gradient(w = w,
                                                   H = des_mat[[y]]$H,
-                                                  data = x[[y]][, 2:3],
+                                                  data = x[[y]][, cols],
                                                   lambda = lambda,
                                                   is_NLL = is_NLL),
                   FUN.VALUE = numeric(length(w)),
