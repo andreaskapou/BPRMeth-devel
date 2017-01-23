@@ -199,6 +199,14 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                               .design_matrix(x = basis, obs = y[, 1]))
     }
 
+    # Cases when we have Binomial or Bernoulli data
+    if (NCOL(x[[1]]) == 3){
+      # Methylation data
+      cols <- 2:3
+    }else{
+      cols <- 2
+    }
+    
     # Run EM algorithm until convergence
     for (t in 1:em_max_iter){
 
@@ -212,7 +220,7 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                                 FUN = function(y)
                                     .bpr_likelihood(w = w[, k],
                                                     H = des_mat[[y]]$H,
-                                                    data = x[[y]][, 2:3],
+                                                    data = x[[y]][, cols],
                                                     is_NLL = FALSE),
                                 FUN.VALUE = numeric(1),
                                 USE.NAMES = FALSE)
