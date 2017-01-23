@@ -47,12 +47,12 @@
     Phi[which(Phi < 1e-15)] <- 1e-15
 
     # Compute the log likelihood
-    res <- sum(dbinom(x = succ, size = total, prob = Phi, log = TRUE))
+    res <- sum(dbinom(x = succ, size = total, prob = Phi, log = TRUE)) - lambda * t(w) %*% w
 
-    M <- length(w)
-    if (M > 1){
-        res <- res - lambda * t(w[2:M]) %*% w[2:M]
-    }
+    #M <- length(w)
+    #if (M > 1){
+    #    res <- res - lambda * t(w[2:M]) %*% w[2:M]
+    #}
 
     # If we required the Negative Log Likelihood
     if (is_NLL){
@@ -97,12 +97,12 @@
     N[which(N < 1e-15)] <- 1e-15
 
     # Compute the gradient vector w.r.t the coefficients w
-    gr <- (N * (succ * (1 / Phi) - (total - succ) * (1 / (1 - Phi)))) %*% H
-        #- 2 * lambda * w
-    M <- length(w)
-    if (M > 1){
-        gr[2:M] <- gr[2:M] - 2 * lambda * w[2:M]
-    }
+    gr <- (N * (succ * (1 / Phi) - (total - succ) * (1 / (1 - Phi)))) %*% H - 2 * lambda * w
+
+    #M <- length(w)
+    #if (M > 1){
+    #    gr[2:M] <- gr[2:M] - 2 * lambda * w[2:M]
+    #}
     # If we required the Negative Log Likelihood
     if (is_NLL){
         gr <- (-1) * gr
