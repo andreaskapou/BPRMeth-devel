@@ -158,7 +158,8 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
 
     # Extract number of observations
     N <- length(x)
-
+    # Extract number of basis functions
+    k <- 0
     # Store weighted PDFs
     weighted_pdf <- matrix(0, nrow = N, ncol = K)
 
@@ -190,42 +191,28 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
         # Create design matrix for each observation
         des_mat <- parallel::mclapply(X   = x,
                               FUN = function(y)
-                                  .design_matrix(x = basis, obs = y[, 1]),
+                                  .design_matrix(x = basis, obs = y[, 1])$H,
                               mc.cores = no_cores)
     }else{
         # Create design matrix for each observation
         des_mat <- lapply(X   = x,
                           FUN = function(y)
-                              .design_matrix(x = basis, obs = y[, 1]))
+                              .design_matrix(x = basis, obs = y[, 1])$H)
     }
 
-    # Cases when we have Binomial or Bernoulli data
-    if (NCOL(x[[1]]) == 3){
-      # Methylation data
-      cols <- 2:3
-    }else{
-      cols <- 2
-    }
-    
     # Run EM algorithm until convergence
     for (t in 1:em_max_iter){
-
         #
         # E-Step -----------------------------------------------
         #
         # Compute weighted pdfs for each cluster
-        for (k in 1:K){
-            # For each element in x, evaluate the BPR log likelihood
-            weighted_pdf[, k] <- vapply(X   = 1:N,
-                                FUN = function(y)
-                                    .bpr_likelihood(w = w[, k],
-                                                    H = des_mat[[y]]$H,
-                                                    data = x[[y]][, cols],
-                                                    is_NLL = FALSE),
-                                FUN.VALUE = numeric(1),
-                                USE.NAMES = FALSE)
-            weighted_pdf[, k] <- log(pi_k[k]) + weighted_pdf[, k]
-        }
+        weighted_pdf <- bpr_lik_resp(w = w,
+                                     x = x,
+                                     des_mat = des_mat,
+                                     pi_k = log(pi_k),
+                                     lambda = lambda,
+                                     is_NLL = FALSE)
+
         # Calculate probs using the logSumExp trick for numerical stability
         Z <- apply(weighted_pdf, 1, .log_sum_exp)
         # Get actual posterior probabilities, i.e. responsibilities
@@ -249,8 +236,8 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                                            .combine = cbind),
                     ex  = {
                         out <- optim(par       = w[, k],
-                                     fn        = .sum_weighted_bpr_lik,
-                                     gr        = .sum_weighted_bpr_grad,
+                                     fn        = sum_weighted_bpr_lik,
+                                     gr        = sum_weighted_bpr_grad,
                                      method    = opt_method,
                                      control   = list(maxit = opt_itnmax),
                                      x         = x,
@@ -265,8 +252,8 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                                             .combine = cbind),
                      ex  = {
                          out <- optim(par       = w[, k],
-                                      fn        = .sum_weighted_bpr_lik,
-                                      gr        = .sum_weighted_bpr_grad,
+                                      fn        = sum_weighted_bpr_lik,
+                                      gr        = sum_weighted_bpr_grad,
                                       method    = opt_method,
                                       control   = list(maxit = opt_itnmax),
                                       x         = x,
@@ -282,7 +269,8 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                 "\tNLL_diff:\t", NLL[t] - NLL[t + 1], "\n")
         }
         if (NLL[t + 1] > NLL[t]){
-            stop("Negative Log Likelihood increases - Stopping EM!\n")
+            message("Negative Log Likelihood increases - Stopping EM!\n")
+            break
         }
         # Check for convergence
         if (NLL[t] - NLL[t + 1] < epsilon_conv){
@@ -313,7 +301,6 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                      class = "bpr_EM")
     return(obj)
 }
-
 
 
 # Internal function to make all the appropriate type checks.

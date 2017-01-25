@@ -311,7 +311,7 @@ bpr_bayes.matrix <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
     # If we need to add the goodness of fit to the data as feature
     if (!is.null(fit_feature)){
         if (identical(fit_feature, "NLL")){
-            fit <- .bpr_likelihood(w = w_opt,
+            fit <- bpr_likelihood(w = w_opt,
                                    H = H,
                                    data = x[ ,2:3],
                                    is_NLL = TRUE)

@@ -156,9 +156,9 @@ sc_bayes_bpr_fdmm_old <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
                 # Apply only to regions with CpG coverage
                 w_pdf[i, k] <- sum(vapply(X   = ind[[i]],
                                           FUN = function(y)
-                                              .bpr_likelihood(w = w[y, , k],
+                                              .old_bpr_likelihood(w = w[y, , k],
                                                               H = des_mat[[i]][[y]],
-                                                              data = x[[i]][[y]][, 2],
+                                                              data = x[[i]][[y]][,2],
                                                               lambda = lambda,
                                                               is_NLL = FALSE),
                                           FUN.VALUE = numeric(1),

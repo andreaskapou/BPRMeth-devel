@@ -197,13 +197,6 @@ bpr_optim.matrix <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
     # Vector for storing CpG locations relative to TSS
     obs <- as.vector(x[, 1])
 
-    if (NCOL(x) == 3){
-        # Methylation data
-        data <- x[, 2:3]
-    }else{
-        data <- cbind(1, x[, 2])
-    }
-
     # Create design matrix H
     des_mat <- .design_matrix(x = basis, obs = obs)
     H       <- des_mat$H
@@ -211,12 +204,12 @@ bpr_optim.matrix <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
 
     # Call optim function to perform minimization of the NLL of BPR function
     w_opt <- optim(par     = w,
-                   fn      = .bpr_likelihood,
-                   gr      = .bpr_gradient,
+                   fn      = bpr_likelihood,
+                   gr      = bpr_gradient,
                    method  = opt_method,
                    control = list(maxit = opt_itnmax),
                    H       = H,
-                   data    = data,
+                   data    = x,
                    lambda  = lambda,
                    is_NLL  = TRUE)$par
 
@@ -224,14 +217,19 @@ bpr_optim.matrix <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
         # If we need to add the goodness of fit to the data as feature
         if (!is.null(fit_feature)){
             if (identical(fit_feature, "NLL")){
-                fit <- .bpr_likelihood(w = w_opt,
-                                       H = H,
-                                       data = data,
-                                       is_NLL = TRUE)
+                fit <- bpr_likelihood(w = w_opt,
+                                      H = H,
+                                      data = x,
+                                      lambda = lambda,
+                                      is_NLL = TRUE)
             }else if (identical(fit_feature, "RMSE")){
                 # Predictions of the target variables
                 f_pred <- as.vector(pnorm(H %*% w_opt))
-                f_true <- data[, 2] / data[, 1]
+                if (NCOL(x) == 3){
+                    f_true <- x[, 3] / x[, 2]
+                }else{
+                    f_true <- x[, 2]
+                }
                 fit <- sqrt(mean( (f_pred - f_true) ^ 2) )
             }
             w_opt <- c(w_opt, fit)

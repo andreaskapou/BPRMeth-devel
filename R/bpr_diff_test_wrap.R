@@ -96,10 +96,10 @@ bpr_diff_test_wrap <- function(x, w = NULL, basis = NULL,
                                 obs = x$treatment[[i]][,1])$H
 
         # Evaluate the likelihood under control parameters
-        nll_treat_null[i] <- .bpr_likelihood(w = out_contr_opt$W_opt[i, 1:params],
-                                             H = H,
-                                             data = x$treatment[[i]][,2:3],
-                                             is_NLL = TRUE)
+        nll_treat_null[i] <- bpr_likelihood(w = out_contr_opt$W_opt[i, 1:params],
+                                            H = H,
+                                            data = x$treatment[[i]],
+                                            is_NLL = TRUE)
     }
     # NLL for null hypothesis
     nll_null <- nll_contr_null + nll_treat_null
