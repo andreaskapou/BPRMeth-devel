@@ -198,7 +198,7 @@ NULL
     # For each element in x, evaluate the BPR log likelihood
     res <- vapply(X   = 1:N,
                   FUN = function(y) .old_bpr_likelihood(w = w,
-                                                   H = des_mat[[y]]$H,
+                                                   H = des_mat[[y]],
                                                    data = x[[y]][,2:3],
                                                    lambda = lambda,
                                                    is_NLL = is_NLL),
@@ -233,7 +233,7 @@ NULL
     # For each element in x, evaluate the gradient of the BPR log likelihood
     res <- vapply(X   = 1:N,
                   FUN = function(y) .old_bpr_gradient(w = w,
-                                                 H = des_mat[[y]]$H,
+                                                 H = des_mat[[y]],
                                                  data = x[[y]][,2:3],
                                                  lambda = lambda,
                                                  is_NLL = is_NLL),
