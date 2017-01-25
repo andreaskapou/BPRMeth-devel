@@ -206,12 +206,26 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
         # E-Step -----------------------------------------------
         #
         # Compute weighted pdfs for each cluster
-        weighted_pdf <- bpr_lik_resp(w = w,
-                                     x = x,
-                                     des_mat = des_mat,
-                                     pi_k = log(pi_k),
-                                     lambda = lambda,
-                                     is_NLL = FALSE)
+#         weighted_pdf <- bpr_lik_resp(w = w,
+#                                      x = x,
+#                                      des_mat = des_mat,
+#                                      pi_k = log(pi_k),
+#                                      lambda = lambda,
+#                                      is_NLL = FALSE)
+
+        for (k in 1:K){
+            # For each element in x, evaluate the BPR log likelihood
+            weighted_pdf[, k] <- vapply(X   = 1:N,
+                                        FUN = function(y)
+                                            bpr_likelihood(w = w[, k],
+                                                           H = des_mat[[y]],
+                                                           data = x[[y]],
+                                                           lambda = lambda,
+                                                           is_NLL = FALSE),
+                                        FUN.VALUE = numeric(1),
+                                        USE.NAMES = FALSE)
+            weighted_pdf[, k] <- log(pi_k[k]) + weighted_pdf[, k]
+        }
 
         # Calculate probs using the logSumExp trick for numerical stability
         Z <- apply(weighted_pdf, 1, .log_sum_exp)
