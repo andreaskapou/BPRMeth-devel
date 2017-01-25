@@ -6,3 +6,6 @@
 *.out
 *.blg
 *.aux
+src/*.o
+src/*.so
+src/*.dll
