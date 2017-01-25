@@ -13,6 +13,8 @@
 #'   randomForest assertthat graphics IRanges
 #' @importFrom stats pnorm dbinom dnorm
 #' @importFrom data.table data.table fread
+#' @importFrom Rcpp evalCpp
+#' @useDynLib BPRMeth
 #'
 .datatable.aware <- TRUE
 NULL

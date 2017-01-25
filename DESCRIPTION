@@ -12,9 +12,11 @@ Description: BPRMeth package uses the Binomial Probit Regression likelihood
     Using these higher order features across promoter-proximal regions, we
     construct a powerful predictor of gene expression. Also, these features
     are used to cluster proximal-promoter regions using the EM algorithm.
+LinkingTo: Rcpp, RcppArmadillo
 Depends:
     R (>= 3.2.2),
-    GenomicRanges
+    GenomicRanges,
+    RcppArmadillo
 License: GPL-3
 LazyData: true
 RoxygenNote: 5.0.1
@@ -35,7 +37,8 @@ Imports: assertthat,
     caret,
     mvtnorm,
     truncnorm,
-    MCMCpack
+    MCMCpack,
+    Rcpp
 Suggests: testthat,
     knitr,
     rmarkdown,
