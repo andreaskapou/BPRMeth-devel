@@ -100,7 +100,7 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
     }
 
     # Extract upstream and downstream lengths in bps
-    width        <- GenomicRanges::ranges(prom_region)@width[1]
+    width          <- GenomicRanges::ranges(prom_region)@width[1]
     if (identical(tss_strand[1], "+")){
         upstream   <- GenomicRanges::ranges(prom_region)@start[1] - tss_loc[1]
         downstream <- width + upstream - 1
@@ -110,21 +110,26 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
         upstream   <- downstream - width + 1
     }
 
+
     # Initialize variables -----------------------------------------
+    meth_data <- list()
+    for (j in 1:length(prom_id)){
+        meth_data[[prom_id[j]]] <- NA         # Initilize list to NA
+    }
     LABEL        <- FALSE                     # Flag variable
-    meth_data    <- list()                    # List where data will be stored
     prom_counter <- 0                         # Promoter counter
     cpg_ind      <- vector(mode = "integer")  # Vector of CpG indices
     cpg_ind      <- c(cpg_ind, subj_hits[1])  # Add the first subject hit
 
-    for (i in 2:NROW(query_hits)){
+    total_iter <- NROW(query_hits)
+    for (i in 2:total_iter){
         # If query hits is the same as the previous one
         if (query_hits[i] == query_hits[i - 1]){
             cpg_ind <- c(cpg_ind, subj_hits[i])  # Add subject hit
             # In case we have the last region
-            if (i == NROW(query_hits)){
-              prom_counter <- prom_counter + 1  # Increase promoter counter
-              LABEL <- TRUE
+            if (i == total_iter){
+                prom_counter <- prom_counter + 1  # Increase promoter counter
+                LABEL <- TRUE
             }
         }else{
             prom_counter <- prom_counter + 1  # Increase promoter counter
@@ -134,7 +139,6 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
         if (LABEL){
             # TSS location for promoter 'promCount'
             id <- prom_id[prom_loc[prom_counter]]
-            meth_data[[id]] <- NA
             # Only keep regions that have more than 'n' CpGs
             if (length(cpg_ind) > cpg_density){
                 # If sd of the methylation level is above threshold
@@ -162,7 +166,7 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
                                               ncol = D)
 
                     # Store normalized locations of methylated CpGs
-                    meth_data[[id]][, 1] <- .minmax_scaling(
+                    meth_data[[id]][, 1] <- BPRMeth:::.minmax_scaling(
                                                 data = center_data[Order],
                                                 xmin = upstream,
                                                 xmax = downstream,
@@ -185,16 +189,6 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
             cpg_ind <- c(cpg_ind, subj_hits[i])
         }
     }
-    # Obtain promoters that did not have CpG coverage
-    ind <- which(is.na(match(seq_along(tss_loc), prom_loc)))
-    id <- prom_id[ind]
-    for (i in seq_along(ind)){
-        meth_data[[id[i]]] <- NA
-    }
-    # Get the indices of matches between annot data and meth_data
-    ind <- match(prom_id, names(meth_data))
-    # Reorder methylation data to match annot_data
-    meth_data <- meth_data[ind]
 
     message("Done!\n")
     return(meth_data)
