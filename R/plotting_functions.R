@@ -157,7 +157,8 @@ plot_cluster_prof <- function(bpr_cluster_obj,
                               main_lab = "Clustered methylation profiles"){
     graphics::par(mar=c(4.2, 4.1, 3.1, 2), xpd=TRUE)
     cols <- c("darkolivegreen4", "cornflowerblue",
-              "coral", "firebrick","#E69F00")
+              "coral", "firebrick","#E69F00", "darkmagenta",
+              "darkslategray", "lightgoldenrod4", "lightseagreen")
     xs <- seq(-1,1,len=2000) # create some values
     graphics::plot(x = xs,
                    y = eval_probit_function(bpr_cluster_obj$basis, xs,
@@ -167,15 +168,14 @@ plot_cluster_prof <- function(bpr_cluster_obj,
                    xlab = "promoter region",
                    ylab = "methylation level",
                    main = main_lab)
-    K <- 5
-    if (bpr_cluster_obj$K < 5){
-        K <- bpr_cluster_obj$K
-    }
-    for (k in 2:K){
-        graphics::lines(x = xs,
-                        y = eval_probit_function(bpr_cluster_obj$basis, xs,
-                                                 bpr_cluster_obj$w[, k]),
-                        col = cols[k], lwd = 4)
+    K <- bpr_cluster_obj$K
+    if (K > 1){
+        for (k in 2:K){
+            graphics::lines(x = xs,
+                            y = eval_probit_function(bpr_cluster_obj$basis, xs,
+                                                     bpr_cluster_obj$w[, k]),
+                            col = cols[k], lwd = 4)
+        }
     }
     #   graphics::legend("right", inset=c(-0.18,0), legend=seq(1,K),
     #                    lty = 1, lwd=4, col=cols[1:K], title="Cluster")
@@ -215,7 +215,8 @@ boxplot_cluster_gex <- function(bpr_cluster_obj, gex,
     graphics::par(mar=c(4.2, 4.1, 3.1, 5.5), xpd=TRUE)
 
     cols <- c("darkolivegreen4", "cornflowerblue",
-              "coral", "firebrick","#E69F00")
+              "coral", "firebrick","#E69F00", "darkmagenta",
+              "darkslategray", "lightgoldenrod4", "lightseagreen")
     gex_list <- list()
     for (k in 1:bpr_cluster_obj$K){
         gex_list[[k]] <- gex[which(bpr_cluster_obj$labels == k)]
