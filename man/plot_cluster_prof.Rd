@@ -30,11 +30,10 @@ res   <- bpr_cluster_wrap(x = obs, K = 3, em_max_iter = 5, opt_itnmax = 4,
 plot_cluster_prof(bpr_cluster_obj = res)
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{plot_scatter_gex}},
   \code{\link{plot_fitted_profiles}}, \code{\link{boxplot_cluster_gex}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

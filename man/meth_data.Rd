@@ -21,4 +21,3 @@ Synthetic methylation data
 A synthetic dataset containinig 600 entries.
 }
 \keyword{datasets}
-

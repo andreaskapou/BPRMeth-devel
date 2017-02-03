@@ -52,12 +52,11 @@ A 'bpr_test' object which, in addition to the input
 subroutines for performing statistical testing between methylation samples
 using the likelihood ratio test.
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{bpr_optimize}}, \code{\link{create_basis}},
   \code{\link{eval_functions}}, \code{\link{train_model_gex}},
   \code{\link{predict_model_gex}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

@@ -88,12 +88,11 @@ functions are given as input features for performing regression in order to
 predict the corresponding differential (log2 fold-change) gene expression
 levels.
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{bpr_optimize}}, \code{\link{create_basis}},
   \code{\link{eval_functions}}, \code{\link{train_model_gex}},
   \code{\link{predict_model_gex}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

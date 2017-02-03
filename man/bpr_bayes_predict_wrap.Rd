@@ -87,4 +87,3 @@ out   <- bpr_bayes_predict_wrap(x = obs, y = y, basis = basis,
 \seealso{
 \code{\link{bpr_optim}}
 }
-

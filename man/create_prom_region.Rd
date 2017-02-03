@@ -42,11 +42,10 @@ prom_region <- create_prom_region(annot_data)
 tss <- prom_region$tss
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{create_methyl_region}}, \code{\link{read_chrom_size}},
   \code{\link{read_rna_encode_caltech}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

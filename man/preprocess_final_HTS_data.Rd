@@ -59,11 +59,10 @@ methyl_region <- create_methyl_region(bs_data, prom_region)
 res <- preprocess_final_HTS_data(methyl_region, prom_region, annot_data)
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{read_rna_encode_caltech}}
   \code{\link{process_haib_caltech_wrap}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

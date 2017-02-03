@@ -36,10 +36,9 @@ train_model <- train_model_gex(formula = y~., train = train_data)
 res <- predict_model_gex(model = train_model$gex_model, test = test_data)
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{train_model_gex}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

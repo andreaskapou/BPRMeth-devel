@@ -77,10 +77,9 @@ prom_region <- create_prom_region(annot_data)
 meth_region <- create_methyl_region(bs_data, prom_region)
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{preprocess_bs_seq}}, \code{\link{create_prom_region}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

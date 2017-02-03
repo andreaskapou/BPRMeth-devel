@@ -44,6 +44,7 @@ Important section below on when to use this function.
 
   Bismark Cov format: \url{http://rnbeads.mpi-inf.mpg.de/data/RnBeads.pdf}
 }
+
 \examples{
 # Obtain the path to the file
 bs_file1 <- system.file("extdata", "rrbs.bed", package = "BPRMeth")
@@ -55,11 +56,10 @@ bs_files <-  c(bs_file1, bs_file2)
 pooled_data <- pool_bs_seq_rep(bs_files)
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{read_bs_bismark_cov}},
   \code{\link{read_bs_encode_haib}}, \code{\link{preprocess_bs_seq}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

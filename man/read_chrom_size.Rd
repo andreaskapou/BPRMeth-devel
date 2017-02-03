@@ -24,11 +24,10 @@ chr_data <- read_chrom_size(chr_file)
 chr_data[1]
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{read_rna_encode_caltech}},
  \code{\link{read_bs_encode_haib}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

@@ -41,10 +41,9 @@ gene_name <- rna_data$gene_name
 gene_fpkm <- rna_data$gene_fpkm
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{read_chrom_size}}, \code{\link{read_bs_encode_haib}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

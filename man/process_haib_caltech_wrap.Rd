@@ -105,4 +105,3 @@ proc_data <- process_haib_caltech_wrap(rrbs_file, rnaseq_file)
 \author{
 C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
 }
-

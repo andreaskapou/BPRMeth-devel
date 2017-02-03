@@ -35,11 +35,10 @@ cgi_id <- cgi_data$id
 }
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{read_rna_encode_caltech}},
   \code{\link{read_bs_encode_haib}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

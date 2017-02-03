@@ -2,6 +2,7 @@
 % Please edit documentation in R/bpr_bayes.R
 \name{bpr_bayes}
 \alias{bpr_bayes}
+\alias{bpr_bayes}
 \alias{bpr_bayes.list}
 \alias{bpr_bayes.matrix}
 \title{Gibbs sampling approach for the BPR model}
@@ -96,10 +97,9 @@ out_opt <- bpr_bayes(x = data, w_mle = w, w_0_mean = w_0_mean,
                      w_0_cov = w_0_cov, basis = basis)
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{create_basis}}, \code{\link{eval_functions}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

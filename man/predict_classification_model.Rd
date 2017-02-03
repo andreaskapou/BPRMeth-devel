@@ -24,10 +24,9 @@ A list containing the following elements: \itemize{ \item
 levels using a model trained on higher order methylation features extracted
 from specific genomic regions.
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{train_model_gex}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

@@ -15,4 +15,3 @@ Synthetic gene expression data
 Corresponding gene expression data for the 'meth_data'
 }
 \keyword{datasets}
-

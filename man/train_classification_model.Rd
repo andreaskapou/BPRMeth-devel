@@ -31,10 +31,9 @@ A list containing the following elements: \itemize{ \item
 expression levels by taking as input the higher order methylation features
 extracted from specific genomic regions.
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{predict_model_gex}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

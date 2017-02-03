@@ -39,11 +39,10 @@ out   <- bpr_predict_wrap(x = obs, y = y, basis = basis,
 plot_fitted_profiles(region = 16, X = meth_data, fit_prof = out)
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{plot_cluster_prof}}, \code{\link{plot_scatter_gex}},
   \code{\link{boxplot_cluster_gex}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

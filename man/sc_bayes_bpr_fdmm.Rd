@@ -56,4 +56,3 @@ performing clustering of single cells based on their DNA methylation
 profiles, where the observation model is the Bernoulli distributed Probit
 Regression likelihood.
 }
-

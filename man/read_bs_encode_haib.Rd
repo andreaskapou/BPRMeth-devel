@@ -36,6 +36,7 @@ on when to use this function.
   is a helper function. Instead you should call the
   \code{\link{preprocess_bs_seq}} function.
 }
+
 \examples{
 # Obtain the path to the file and then read it
 bs_file <- system.file("extdata", "rrbs.bed", package = "BPRMeth")
@@ -44,9 +45,6 @@ bs_data <- read_bs_encode_haib(bs_file)
 # Extract the total reads and methylated reads
 total_reads <- bs_data$total_reads
 meth_reads <- bs_data$meth_reads
-}
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
 }
 \references{
 \url{http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgTables?db=hg19&hgta_group=
@@ -57,4 +55,6 @@ describe+table+schema}
 \seealso{
 \code{\link{pool_bs_seq_rep}}, \code{\link{preprocess_bs_seq}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

@@ -77,4 +77,3 @@ data_clust <- bpr_cluster_wrap(x = ex_data, em_max_iter = 3, opt_itnmax = 5,
 \author{
 C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
 }
-

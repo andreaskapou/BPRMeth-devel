@@ -34,11 +34,10 @@ res   <- bpr_predict_wrap(x = obs, y = y, basis = basis,
 plot_scatter_gex(bpr_predict_obj = res)
 
 }
-\author{
-C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
-}
 \seealso{
 \code{\link{plot_cluster_prof}}, \code{\link{plot_fitted_profiles}},
   \code{\link{boxplot_cluster_gex}}
 }
-
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}
