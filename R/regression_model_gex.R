@@ -52,14 +52,23 @@ train_model_gex <- function(formula = NULL, model_name = "svm", train,
                             data = train,
                             kernel = "radial",
                             cross = 10)
+    }else if (model_name == "gp"){
+        model <- kernlab::gausspr(x = formula,
+                                  data = train)
+        train_pred <- as.vector(kernlab::predict(object  = model,
+                                        newdata = train[, 1:(NCOL(train) - 1),
+                                                        drop = FALSE],
+                                        type    = "response"))
     }else{
         model <- stats::lm(formula = formula,
                            data = train)
     }
 
-    # Make predictions
-    train_pred <- predict(object = model,
-                          type   = "response")
+    if (!identical(model_name, "gp")){
+        # Make predictions
+        train_pred <- as.vector(predict(object  = model,
+                                        type    = "response"))
+    }
 
     if (length(train_pred) != length(train$y)){
         warning("The regression model returned NAs")
@@ -119,10 +128,17 @@ predict_model_gex <- function(model, test, is_summary = TRUE){
     test <- as.data.frame(test)
 
     # Make predictions
-    test_pred <- predict(object  = model,
-                         newdata = test[, 1:(NCOL(test) - 1), drop = FALSE],
-                         type    = "response")
-
+    if (is(model, "gausspr")){
+        test_pred <- as.vector(kernlab::predict(object  = model,
+                                                newdata = test[, 1:(NCOL(test) - 1),
+                                                               drop = FALSE],
+                                                type    = "response"))
+    }else{
+        test_pred <- as.vector(predict(object  = model,
+                                       newdata = test[, 1:(NCOL(test) - 1),
+                                                      drop = FALSE],
+                                       type    = "response"))
+    }
     # Calculate model errors
     if (is_summary) message("-- Test Errors --")
     test_errors <- .calculate_errors(x = test$y,
