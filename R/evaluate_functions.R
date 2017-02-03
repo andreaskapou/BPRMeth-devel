@@ -109,3 +109,21 @@ eval_function.polynomial <- function(x, obs, w, ...){
     }
     return(f)
 }
+
+
+#' @rdname eval_functions
+#'
+#' @export
+eval_function.fourier <- function(x, obs, w, ...){
+    assertthat::assert_that(methods::is(x, "fourier"))
+    assertthat::assert_that(is.vector(obs))
+    assertthat::assert_that(is.vector(w))
+
+    # Create design matrix object
+    des_mat <- .design_matrix(x = x, obs = obs)
+    H <- des_mat$H
+
+    # Compute the inner product in order to get the predictions/evaluations
+    f <- as.vector(H %*% w)
+    return(f)
+}

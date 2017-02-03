@@ -111,3 +111,46 @@
     }
     return(list(H = H, basis = x))
 }
+
+
+# Create Fourier design matrices
+#
+# \code{.design_matrix.fourier} creates a design matrix H using Fourier basis
+# functions of degree M. Similar implementation to the FDA package.
+#
+# @param x A basis object.
+# @param obs A vector of observations.
+# @param ... Additional parameters
+#
+# @return A list containing the design matrix H and the basis object. The
+#   dimensions of the matrix H are N x (M+1), where N is the length of the
+#   observations, and M is the degree of the polynomial.
+#
+# @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
+#
+# @seealso \code{\link{design_matrix}}, \code{\link{create_polynomial_object}}
+#
+.design_matrix.fourier <- function(x, obs, ...){
+    assertthat::assert_that(methods::is(x, "fourier"))
+    assertthat::assert_that(is.vector(obs))
+
+    # Compute base frequency
+    omega <- 2 * pi / x$period
+    # Initialize design matrix
+    H <- matrix(1 / sqrt(2), nrow = length(obs), ncol = x$M + 1)
+    if (x$M > 1){
+        # Get the basis
+        j <- seq(2, x$M, 2)
+        k <- j / 2
+        # Compute outer product
+        evals <- outer(omega * obs, k)
+        # Make the sine evaluations
+        H[, j] <- sin(evals)
+        # Make the cosine evaluations
+        H[, j + 1] <- cos(evals)
+    }
+    # Divide by this constant to get actual magnitude
+    # TODO: Understand better this step
+    H <- H / sqrt(x$period / 2)
+    return(list(H = H, basis = x))
+}
