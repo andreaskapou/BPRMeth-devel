@@ -166,7 +166,7 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
                                               ncol = D)
 
                     # Store normalized locations of methylated CpGs
-                    meth_data[[id]][, 1] <- BPRMeth:::.minmax_scaling(
+                    meth_data[[id]][, 1] <- .minmax_scaling(
                                                 data = center_data[Order],
                                                 xmin = upstream,
                                                 xmax = downstream,
