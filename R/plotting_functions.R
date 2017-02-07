@@ -8,6 +8,8 @@
 #' @param fit_prof Fitted profile
 #' @param fit_mean Fitted mean function
 #' @param title Title of the plot
+#' @param up_label Label for upstream region from TSS
+#' @param down_label Label for downstream region from TSS
 #' @param ... Additional parameters
 #'
 #' @return The figure to be plotted in the device.
@@ -30,7 +32,8 @@
 #'
 #' @export
 plot_fitted_profiles <- function(region, X, fit_prof, fit_mean = NULL,
-                                 title = "Gene promoter", ...){
+                                 title = "Gene promoter", up_label = "-7kb",
+                                 down_label = "+7kb", ...){
 
     graphics::par(cex=1.05, mai=c(1.37,1.37,.7,.3) )
     x <- X[[region]][,1]
@@ -45,7 +48,7 @@ plot_fitted_profiles <- function(region, X, fit_prof, fit_mean = NULL,
                    cex.axis = 1.1, xaxt = "n")
     graphics::mtext(side = 1, "genomic region", line = 3, cex = 1.2)
     graphics::mtext(side = 2, "methylation level", line = 3, cex = 1.2)
-    graphics::axis(side = 1, at = c(-1, 0, 1), labels=c("-7kb", "TSS", "+7kb"))
+    graphics::axis(side = 1, at = c(-1, 0, 1), labels=c(up_label, "TSS", down_label))
     graphics::title(main=title, line = 1, cex.main=1.4)
     if(!is.null(fit_mean)){
         graphics::lines(x = xs,

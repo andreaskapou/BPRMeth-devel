@@ -5,7 +5,7 @@
 \title{Plot the fit of methylation profiles across a region}
 \usage{
 plot_fitted_profiles(region, X, fit_prof, fit_mean = NULL,
-  title = "Gene promoter", ...)
+  title = "Gene promoter", up_label = "-7kb", down_label = "+7kb", ...)
 }
 \arguments{
 \item{region}{Promoter region number}
@@ -17,6 +17,10 @@ plot_fitted_profiles(region, X, fit_prof, fit_mean = NULL,
 \item{fit_mean}{Fitted mean function}
 
 \item{title}{Title of the plot}
+
+\item{up_label}{Label for upstream region from TSS}
+
+\item{down_label}{Label for downstream region from TSS}
 
 \item{...}{Additional parameters}
 }
