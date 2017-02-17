@@ -197,6 +197,11 @@ bpr_optim.matrix <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
     # Vector for storing CpG locations relative to TSS
     obs <- as.vector(x[, 1])
 
+    # Perform checks for initial parameter values
+    out <- .do_checks(w = w, basis = basis)
+    w   <- out$w
+    basis <- out$basis
+
     # Create design matrix H
     des_mat <- .design_matrix(x = basis, obs = obs)
     H       <- des_mat$H
