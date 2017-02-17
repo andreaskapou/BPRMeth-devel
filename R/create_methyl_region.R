@@ -108,6 +108,9 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
         downstream <- abs(GenomicRanges::ranges(prom_region)@start[1] -
                               tss_loc[1])
         upstream   <- downstream - width + 1
+    }else{
+      upstream     <- GenomicRanges::ranges(prom_region)@start[1] - tss_loc[1]
+      downstream   <- width + upstream - 1
     }
 
 
