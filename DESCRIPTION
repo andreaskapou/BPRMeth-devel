@@ -19,7 +19,7 @@ Depends:
     RcppArmadillo
 License: GPL-3
 LazyData: true
-RoxygenNote: 6.0.0
+RoxygenNote: 6.0.1
 Imports: assertthat,
     methods,
     MASS,

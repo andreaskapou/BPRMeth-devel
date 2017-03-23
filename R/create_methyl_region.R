@@ -169,12 +169,12 @@ create_methyl_region <- function(bs_data, prom_region, cpg_density = 10,
                                               ncol = D)
 
                     # Store normalized locations of methylated CpGs
-                    meth_data[[id]][, 1] <- .minmax_scaling(
-                                                data = center_data[Order],
-                                                xmin = upstream,
-                                                xmax = downstream,
-                                                fmin = fmin,
-                                                fmax = fmax)
+                    meth_data[[id]][, 1] <- round(.minmax_scaling(
+                                                    data = center_data[Order],
+                                                    xmin = upstream,
+                                                    xmax = downstream,
+                                                    fmin = fmin,
+                                                    fmax = fmax), 4)
 
                     if (is_single_cell){
                       # Store methylated reads in the corresponding locations
