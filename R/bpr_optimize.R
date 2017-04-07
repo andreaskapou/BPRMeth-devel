@@ -203,7 +203,7 @@ bpr_optim.matrix <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
     basis <- out$basis
 
     # Create design matrix H
-    des_mat <- .design_matrix(x = basis, obs = obs)
+    des_mat <- design_matrix(x = basis, obs = obs)
     H       <- des_mat$H
     basis   <- des_mat$basis
 

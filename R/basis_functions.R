@@ -65,9 +65,7 @@ create_rbf_object <- function(M = 2, gamma = NULL, mus = NULL,
             }
         }
     }
-    obj <- structure(list(M = M,
-                          mus = mus,
-                          gamma = gamma,
+    obj <- structure(list(M = M, mus = mus, gamma = gamma,
                           eq_spaced_mus = eq_spaced_mus,
                           whole_region = whole_region),
                      class = "rbf")
@@ -172,8 +170,6 @@ create_fourier_object <- function(M = 2, period = 2){
 .fourier_basis <- function(X, M = 3, period = 2){
     # Compute base frequency
     omega <- 2 * pi / period
-    if (M %% 2 == 1)
-        return (cos((M-1)/2 * omega * X))
-    else
-        return (sin(M/2 * omega * X))
+    if (M %% 2 == 1) { return (cos((M-1)/2 * omega * X)) }
+    else { return (sin(M/2 * omega * X)) }
 }

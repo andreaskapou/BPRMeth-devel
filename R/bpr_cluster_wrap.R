@@ -191,13 +191,13 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
         # Create design matrix for each observation
         des_mat <- parallel::mclapply(X   = x,
                               FUN = function(y)
-                                  .design_matrix(x = basis, obs = y[, 1])$H,
+                                  design_matrix(x = basis, obs = y[, 1])$H,
                               mc.cores = no_cores)
     }else{
         # Create design matrix for each observation
         des_mat <- lapply(X   = x,
                           FUN = function(y)
-                              .design_matrix(x = basis, obs = y[, 1])$H)
+                              design_matrix(x = basis, obs = y[, 1])$H)
     }
 
     # Run EM algorithm until convergence

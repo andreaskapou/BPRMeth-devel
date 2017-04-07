@@ -243,7 +243,7 @@ bpr_diff_test_data_wrap <- function(formula = NULL, x, y, model_name = "svm",
     nll_treat_alt <- vector(mode = "numeric", length = length(x$treatment))
     for (i in 1:length(x$treatment)){
         # Create design matrix H
-        H <- .design_matrix.rbf(x   = basis,
+        H <- design_matrix(x   = basis,
                             obs = x$control[[i]][,1])$H
         # Evaluate the likelihood under control parameters
         nll_contr_alt[i] <- my_bpr_likelihood(w = out_contr_opt$W_opt[i, 1:params],
@@ -252,7 +252,7 @@ bpr_diff_test_data_wrap <- function(formula = NULL, x, y, model_name = "svm",
                                               is_NLL = TRUE)
 
         # Create design matrix H
-        H <- .design_matrix.rbf(x   = basis,
+        H <- design_matrix(x   = basis,
                             obs = x$treatment[[i]][,1])$H
         # Evaluate the likelihood under control parameters
         nll_treat_alt[i] <- my_bpr_likelihood(w = out_treat_opt$W_opt[i, 1:params],
@@ -272,7 +272,7 @@ bpr_diff_test_data_wrap <- function(formula = NULL, x, y, model_name = "svm",
     nll_treat_null <- vector(mode = "numeric", length = length(x$treatment))
     for (i in 1:length(x$treatment)){
         # Create design matrix H
-        H <- .design_matrix.rbf(x   = basis,
+        H <- design_matrix(x   = basis,
                             obs = x$treatment[[i]][,1])$H
 
         # Evaluate the likelihood under control parameters
@@ -327,7 +327,7 @@ bpr_diff_test_data_wrap <- function(formula = NULL, x, y, model_name = "svm",
     nll_null_conc <- vector(mode = "numeric", length = length(x$treatment))
     for (i in 1:length(yy)){
         # Create design matrix H
-        H <- .design_matrix.rbf(x   = basis,
+        H <- design_matrix(x   = basis,
                             obs = yy[[i]][,1])$H
 
         # Evaluate the likelihood under control parameters
@@ -374,7 +374,7 @@ bpr_diff_test_data_wrap <- function(formula = NULL, x, y, model_name = "svm",
     nll_sum_treat_null <- vector(mode = "numeric", length = length(x$treatment))
     for (i in 1:length(zz)){
         # Create design matrix H
-        H <- .design_matrix.rbf(x   = basis,
+        H <- design_matrix(x   = basis,
                             obs = zz[[i]][,1])$H
 
         # Evaluate the likelihood under control parameters

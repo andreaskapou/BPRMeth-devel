@@ -124,13 +124,13 @@ sc_bayes_bpr_fdmm_old <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL,
         if (is_parallel){
             des_mat[[i]][ind[[i]]] <- parallel::mclapply(X = x[[i]][ind[[i]]],
                                                          FUN = function(y)
-                                                             .design_matrix(x = basis,
+                                                             design_matrix(x = basis,
                                                                             obs = y[, 1])$H,
                                                          mc.cores = no_cores)
         }else{
             des_mat[[i]][ind[[i]]] <- lapply(X = x[[i]][ind[[i]]],
                                              FUN = function(y)
-                                                 .design_matrix(x = basis,
+                                                 design_matrix(x = basis,
                                                                 obs = y[, 1])$H)
         }
         ##des_mat[[i]][-ind[[i]]] <- NA

@@ -234,7 +234,7 @@ bpr_bayes.matrix <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
     obs <- as.vector(x[ ,1])
 
     # Create design matrix H
-    des_mat <- .design_matrix(x = basis, obs = obs)
+    des_mat <- design_matrix(x = basis, obs = obs)
     H       <- des_mat$H
     basis   <- des_mat$basis
 

@@ -92,8 +92,8 @@ bpr_diff_test_wrap <- function(x, w = NULL, basis = NULL,
     nll_treat_null <- vector(mode = "numeric", length = length(x$treatment))
     for (i in 1:length(x$treatment)){
         # Create design matrix H
-        H <- .design_matrix.rbf(x   = basis,
-                                obs = x$treatment[[i]][,1])$H
+        H <- design_matrix(x   = basis,
+                           obs = x$treatment[[i]][,1])$H
 
         # Evaluate the likelihood under control parameters
         nll_treat_null[i] <- bpr_likelihood(w = out_contr_opt$W_opt[i, 1:params],

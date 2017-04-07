@@ -120,8 +120,7 @@ eval_function.fourier <- function(x, obs, w, ...){
     assertthat::assert_that(is.vector(w))
 
     # Create design matrix object
-    des_mat <- .design_matrix(x = x, obs = obs)
-    H <- des_mat$H
+    H <- design_matrix(x = x, obs = obs)$H
 
     # Compute the inner product in order to get the predictions/evaluations
     f <- as.vector(H %*% w)
