@@ -162,7 +162,8 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                     # Initialize empty vector for observed methylation data
                     yy <- vector(mode = "integer")
                     # Concatenate the nth promoter from all cells in cluster k
-                    H[[k]][[n]] <- do.call(rbind, lapply(des_mat, "[[", n)[C_idx])
+                    tmp <- lapply(des_mat, "[[", n)[C_idx]
+                    H[[k]][[n]] <- do.call(rbind, tmp[!is.na(tmp)])
 
                     # TODO: Check when we have empty promoters....
                     if (is.null(H[[k]][[n]])){ empty_region[n, k] <- 1 }
