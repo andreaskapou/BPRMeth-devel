@@ -156,7 +156,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
             if (length(C_idx) == 0){ message("Warning: Empty cluster..."); next }
             # Check if current clusters ids are not equal to previous ones
             if (!identical(C[, k], C_prev[, k])){
-                message(t, ": Not identical")
+                message(t, ": Not identical, cluster: ", k)
                 # Iterate over each promoter region
                 for (n in 1:N){
                     # Initialize empty vector for observed methylation data
@@ -186,7 +186,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
 
             for (n in 1:N){
                 # In case we have no CpG data in this promoter
-                if (is.null(H[[k]][[n]])){ next }
+                if (is.null(H[[k]][[n]])){ message("inner N: ", n); next }
                 # Perform Gibbs sampling on the augmented BPR model
                 if (inner_gibbs){
                     w_inner <- matrix(0, nrow = gibbs_inner_nsim, ncol = M)
