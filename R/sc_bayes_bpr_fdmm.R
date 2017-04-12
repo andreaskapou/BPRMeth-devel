@@ -166,11 +166,11 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                     H[[k]][[n]] <- do.call(rbind, tmp[!is.na(tmp)])
 
                     # TODO: Check when we have empty promoters....
-                    if (is.null(H[[k]][[n]])){ empty_region[n, k] <- 1 }
+                    if (is.null(H[[k]][[n]])){ empty_region[n, k] <- 1; message("N: ", n) }
                     else{
                         # Obtain the corresponding methylation levels
-                        for (cell in seq_along(C_idx)){
-                            obs <- x[[C_idx[cell]]][[n]]
+                        for (cell in C_idx){
+                            obs <- x[[cell]][[n]]
                             if (length(obs) > 1){ yy <- c(yy, obs[, 2]) }
                         }
                         # Precompute for faster computations
