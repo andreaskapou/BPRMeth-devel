@@ -156,6 +156,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
             if (length(C_idx) == 0){ message("Warning: Empty cluster..."); next }
             # Check if current clusters ids are not equal to previous ones
             if (!identical(C[, k], C_prev[, k])){
+                message(t, ": Not identical in cluster ", k)
                 # Iterate over each promoter region
                 for (n in 1:N){
                     # Initialize empty vector for observed methylation data
