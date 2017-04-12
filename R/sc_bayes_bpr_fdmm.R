@@ -156,18 +156,19 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
             if (length(C_idx) == 0){ message("Warning: Empty cluster..."); next }
             # Check if current clusters ids are not equal to previous ones
             if (!identical(C[, k], C_prev[, k])){
-                message(t, ": Not identical, cluster: ", k)
                 # Iterate over each promoter region
                 for (n in 1:N){
                     # Initialize empty vector for observed methylation data
                     yy <- vector(mode = "integer")
                     # Concatenate the nth promoter from all cells in cluster k
                     tmp <- lapply(des_mat, "[[", n)[C_idx]
-                    H[[k]][[n]] <- do.call(rbind, tmp[!is.na(tmp)])
-
+                    tmp <- do.call(rbind, tmp[!is.na(tmp)])
                     # TODO: Check when we have empty promoters....
-                    if (is.null(H[[k]][[n]])){ empty_region[n, k] <- 1; message("N: ", n) }
-                    else{
+                    if (is.null(tmp)) {
+                        H[[k]][[n]] <- NA
+                        empty_region[n, k] <- 1
+                    }else{
+                        H[[k]][[n]] <- tmp
                         # Obtain the corresponding methylation levels
                         for (cell in C_idx){
                             obs <- x[[cell]][[n]]
@@ -183,10 +184,9 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                     }
                 }
             }
-
             for (n in 1:N){
                 # In case we have no CpG data in this promoter
-                if (is.null(H[[k]][[n]])){ message("inner N: ", n); next }
+                if (is.na(H[[k]][[n]])){ next }
                 # Perform Gibbs sampling on the augmented BPR model
                 if (inner_gibbs){
                     w_inner <- matrix(0, nrow = gibbs_inner_nsim, ncol = M)
