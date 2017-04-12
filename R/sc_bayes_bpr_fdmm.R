@@ -92,10 +92,9 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
     pi_draws[1, ] <- pi_k
 
     # Store BPR coefficient draws
-    w_draws <- array(data = 0, dim = c(gibbs_nsim, N, M , K))
+    w_draws <- array(data = 0, dim = c(gibbs_nsim - gibbs_burn_in, N, M , K))
     # TODO: Initialize w in a sensible way
     if (is.null(w)){ w <- array(data = 0, dim = c(N, M, K)) }
-    w_draws[1, , ,] <- w
 
     ind <- list()     # Keep a list of promoter regions with CpG coverage
     des_mat <- list() # Create design matrix for each cell for each promoter region
@@ -187,7 +186,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
             }
             for (n in 1:N){
                 # In case we have no CpG data in this promoter
-                if (is.na(H[[k]][[n]])){ next }
+                if (is.vector(H[[k]][[n]])){ next }
                 # Perform Gibbs sampling on the augmented BPR model
                 if (inner_gibbs){
                     w_inner <- matrix(0, nrow = gibbs_inner_nsim, ncol = M)
@@ -253,7 +252,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
             }
         }
         C_prev <- C            # Make current cluster indices same as previous
-        w_draws[t, , ,] <- w   # Store the coefficient draw
+        if (t > gibbs_burn_in){w_draws[t - gibbs_burn_in, , ,] <- w}   # Store the coefficient draw
         setTxtProgressBar(pb,t)
     }
     close(pb)
@@ -266,7 +265,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
     else{ pi_post <- colMeans(pi_draws[gibbs_burn_in:gibbs_nsim, ]) }
     C_post <- C_matrix / (gibbs_nsim - gibbs_burn_in)
     w_post <- array(0, dim = c(N, M, K))
-    for(k in 1:K){ w_post[, , k] <- colSums(w_draws[gibbs_burn_in:gibbs_nsim, , , k]) / (gibbs_nsim - gibbs_burn_in)  }
+    for(k in 1:K){ w_post[, , k] <- colSums(w_draws[, , , k]) / (gibbs_nsim - gibbs_burn_in)  }
 
     # Object to keep input data
     dat <- list(K = K, N = N, I = I, M = M, basis = basis, dir_a = dir_a, lambda = lambda,
