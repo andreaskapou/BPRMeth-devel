@@ -138,6 +138,16 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
         # Draw mixture components for ith simulation
         # Sample one point from a Multinomial i.e. ~ Discrete
         for (i in 1:I){ C[i, ] <- rmultinom(n = 1, size = 1, post_prob[i, ]) }
+        
+        ## -------------------------------------------------------------------
+        # Check for empty clusters
+        Cn_k <- colSums(C)
+        for (k in 1:K){
+          if (Cn_k[k] == 0){
+            celli <- which.min(w_pdf[, which.max(Cn_k)])
+            C[celli, ] <- 0; C[celli, k] <- 1
+          }
+        }
         # TODO: Should we keep all data
         if (t > gibbs_burn_in){ C_matrix <- C_matrix + C }
 
