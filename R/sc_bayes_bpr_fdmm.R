@@ -63,7 +63,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
 
     # Initialize priors over the parameters
     if (is.null(w_0_mean)){ w_0_mean <- rep(0, M) }
-    if (is.null(w_0_cov)){ w_0_cov <- diag(5, M) }
+    if (is.null(w_0_cov)){ w_0_cov <- diag(3, M) }
 
     prec_0 <- solve(w_0_cov)          # Invert covariance matrix to get the precision matrix
     w_0_prec_0 <- prec_0 %*% w_0_mean # Compute product of prior mean and prior precision matrix
@@ -141,12 +141,15 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
 
         ## -------------------------------------------------------------------
         # Check for empty clusters
-        Cn_k <- colSums(C)
+        cell_changed <- c()
         for (k in 1:K){
-          if (Cn_k[k] == 0){
-            celli <- which.min(w_pdf[, which.max(Cn_k)])
-            C[celli, ] <- 0; C[celli, k] <- 1
-          }
+            Cn_k <- colSums(C)
+            if (Cn_k[k] == 0){
+                celli <- sample(which(C[, which.max(Cn_k)] == 1), 1)
+                while(celli %in% cell_changed){ celli <- sample(which(C[, which.max(Cn_k)] == 1), 1)}
+                cell_changed <- c(cell_changed, celli)
+                C[celli, ] <- 0; C[celli, k] <- 1
+            }
         }
         # TODO: Should we keep all data
         if (t > gibbs_burn_in){ C_matrix <- C_matrix + C }
