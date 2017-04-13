@@ -63,7 +63,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
 
     # Initialize priors over the parameters
     if (is.null(w_0_mean)){ w_0_mean <- rep(0, M) }
-    if (is.null(w_0_cov)){ w_0_cov <- diag(2, M) }
+    if (is.null(w_0_cov)){ w_0_cov <- diag(5, M) }
 
     prec_0 <- solve(w_0_cov)          # Invert covariance matrix to get the precision matrix
     w_0_prec_0 <- prec_0 %*% w_0_mean # Compute product of prior mean and prior precision matrix
