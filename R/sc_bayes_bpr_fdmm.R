@@ -138,7 +138,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
         # Draw mixture components for ith simulation
         # Sample one point from a Multinomial i.e. ~ Discrete
         for (i in 1:I){ C[i, ] <- rmultinom(n = 1, size = 1, post_prob[i, ]) }
-        
+
         ## -------------------------------------------------------------------
         # Check for empty clusters
         Cn_k <- colSums(C)
@@ -198,7 +198,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                 # In case we have no CpG data in this promoter
                 if (is.vector(H[[k]][[n]])){ next }
                 # Perform Gibbs sampling on the augmented BPR model
-                if (inner_gibbs){
+                if (inner_gibbs & t > 50){
                     w_inner <- matrix(0, nrow = gibbs_inner_nsim, ncol = M)
                     w_inner[1, ] <- w[n, , k]
                     for (tt in 2:gibbs_inner_nsim){
