@@ -246,7 +246,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                 }else{
                     ##-----------------------------------------=======================------------==================-===========-=-=-=-=-=-=-=
                     # TODO:: Should we run this twice to update the z parameter!!!
-                    for (l in 1:4){
+                    for (l in 1:3){
                         # Update Mean of z
                         mu_z <- H[[k]][[n]] %*% w[n, , k]
                         # Draw latent variable z from its full conditional: z | w, y, X
