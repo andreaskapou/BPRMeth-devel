@@ -36,7 +36,7 @@
 #' @importFrom utils txtProgressBar setTxtProgressBar
 #' @export
 sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NULL, w_0_mean = NULL, w_0_cov = NULL,
-                              dir_a = rep(1/K, K), lambda = 1/2, gibbs_nsim = 5000, gibbs_burn_in = 1000,
+                              dir_a = rep(15, K), lambda = 1/2, gibbs_nsim = 5000, gibbs_burn_in = 1000,
                               inner_gibbs = FALSE, gibbs_inner_nsim = 50, is_parallel = TRUE, no_cores = NULL, is_verbose = TRUE){
 
     # Check that x is a list object
@@ -76,7 +76,6 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
     C_matrix     <- matrix(0, nrow = I, ncol = K)  # Total mixture components
     NLL          <- vector(mode = "numeric", length = gibbs_nsim)
     NLL[1]       <- 1e+100
-
     H = y = z = V <- list()
     for (k in 1:K){
         H[[k]] <- vector("list", N) # List of concatenated design matrices
@@ -94,7 +93,17 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
     # Store BPR coefficient draws
     w_draws <- array(data = 0, dim = c(gibbs_nsim - gibbs_burn_in, N, M , K))
     # TODO: Initialize w in a sensible way
-    if (is.null(w)){ w <- array(data = 0, dim = c(N, M, K)) }
+    if (is.null(w)){
+        ww <- array(data = 0, dim = c(N, M, I))
+        for (i in 1:I){
+            cov_prom <- which(!is.na(x[[i]]))
+            # Compute regression coefficients using MLE
+            ww[cov_prom, ,i] <- bpr_optim(x = x[[i]][cov_prom], w = NULL, basis = basis, fit_feature = NULL, cpg_dens_feat = FALSE,
+                                  lambda = lambda, opt_itnmax = 20, is_parallel = TRUE, no_cores = 2)$W_opt
+        }
+        w <- array(data = ww[, ,sample(I, K)], dim = c(N, M, K))
+        # w <- array(data = 0, dim = c(N, M, K))
+    }
 
     ind <- list()     # Keep a list of promoter regions with CpG coverage
     des_mat <- list() # Create design matrix for each cell for each promoter region
@@ -120,6 +129,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
     # Start Gibbs sampling
     ##---------------------------------
     for (t in 2:gibbs_nsim){
+        empty_C <- vector("integer", K)
         ## ---------------------------------------------------------------
         # Compute weighted pdfs for each cluster
         for (k in 1:K){
@@ -128,35 +138,40 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                 bpr_likelihood(w = w[y, , k], H = des_mat[[i]][[y]], data = x[[i]][[y]], lambda = lambda, is_NLL = FALSE),
                 FUN.VALUE = numeric(1), USE.NAMES = FALSE)), FUN.VALUE = numeric(1), USE.NAMES = FALSE)
         }
+        # print(w_pdf)
+
         # Use the logSumExp trick for numerical stability
         Z <- apply(w_pdf, 1, .log_sum_exp)
         # Get actual posterior probabilities, i.e. responsibilities
         post_prob <- exp(w_pdf - Z)
         NLL[t] <- -sum(Z)   # Evaluate NLL
 
+        # print(post_prob)
         ## -------------------------------------------------------------------
         # Draw mixture components for ith simulation
         # Sample one point from a Multinomial i.e. ~ Discrete
         for (i in 1:I){ C[i, ] <- rmultinom(n = 1, size = 1, post_prob[i, ]) }
-
-        ## -------------------------------------------------------------------
-        # Check for empty clusters
-        cell_changed <- c()
-        for (k in 1:K){
-            Cn_k <- colSums(C)
-            if (Cn_k[k] == 0){
-                celli <- sample(which(C[, which.max(Cn_k)] == 1), 1)
-                while(celli %in% cell_changed){ celli <- sample(which(C[, which.max(Cn_k)] == 1), 1)}
-                cell_changed <- c(cell_changed, celli)
-                C[celli, ] <- 0; C[celli, k] <- 1
-            }
-        }
+        # ## -------------------------------------------------------------------
+        # # Check for empty clusters
+        # cell_changed <- c()
+        # for (k in 1:K){
+        #     Cn_k <- colSums(C)
+        #     if (Cn_k[k] == 0){
+        #         celli <- sample(which(C[, which.max(Cn_k)] == 1), 3)
+        #         while(any(celli %in% cell_changed)){ celli <- sample(which(C[, which.max(Cn_k)] == 1), 1)}
+        #         cell_changed <- c(cell_changed, celli)
+        #         C[celli, ] <- 0; C[celli, k] <- 1
+        #     }
+        # }
+        # print(colSums(C))
         # TODO: Should we keep all data
         if (t > gibbs_burn_in){ C_matrix <- C_matrix + C }
 
         ## -------------------------------------------------------------------
         # Update mixing proportions using updated cluster component counts
-        pi_k <- as.vector(rdirichlet(n = 1, alpha = dir_a + colSums(C)))
+        Ci_k <- colSums(C)
+        if (is_verbose) print(Ci_k)
+        pi_k <- as.vector(rdirichlet(n = 1, alpha = dir_a + Ci_k))
         pi_draws[t, ] <- pi_k
 
         # Matrix to keep promoters with no CpG coverage
@@ -165,7 +180,11 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
             # Which cells are assigned to cluster k
             C_idx <- which(C[, k] == 1)
             # TODO: Handle cases when we have empty clusters...
-            if (length(C_idx) == 0){ message("Warning: Empty cluster..."); next }
+            if (length(C_idx) == 0){
+                message("Warning: Empty cluster...")
+                empty_C[k] <- 1
+                next
+            }
             # Check if current clusters ids are not equal to previous ones
             if (!identical(C[, k], C_prev[, k])){
                 message(t, ": Not identical in cluster ", k)
@@ -201,7 +220,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                 # In case we have no CpG data in this promoter
                 if (is.vector(H[[k]][[n]])){ next }
                 # Perform Gibbs sampling on the augmented BPR model
-                if (inner_gibbs & t > 50){
+                if (inner_gibbs & t > 4){
                     w_inner <- matrix(0, nrow = gibbs_inner_nsim, ncol = M)
                     w_inner[1, ] <- w[n, , k]
                     for (tt in 2:gibbs_inner_nsim){
@@ -225,22 +244,26 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                     if (M == 1){ w[n, , k] <- mean(w_inner[-(1:(gibbs_inner_nsim/2)), ]) }
                     else{ w[n, , k] <- colMeans(w_inner[-(1:(gibbs_inner_nsim/2)), ]) }
                 }else{
-                    # Update Mean of z
-                    mu_z <- H[[k]][[n]] %*% w[n, , k]
-                    # Draw latent variable z from its full conditional: z | w, y, X
-                    if (sum_y[k, n] == 0){
-                        z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z, sd = 1, a = -Inf, b = 0)
-                    }else if (sum_y[k, n] == len_y[k, n]){
-                        z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z, sd = 1, a = 0, b = Inf)
-                    }else{
-                        z[[k]][[n]][y[[k]][[n]] == 1] <- rtruncnorm(sum_y[k, n], mean = mu_z[y[[k]][[n]] == 1], sd = 1, a = 0, b = Inf)
-                        z[[k]][[n]][y[[k]][[n]] == 0] <- rtruncnorm(len_y[k, n] - sum_y[k, n], mean = mu_z[y[[k]][[n]] == 0], sd = 1, a = -Inf, b = 0)
+                    ##-----------------------------------------=======================------------==================-===========-=-=-=-=-=-=-=
+                    # TODO:: Should we run this twice to update the z parameter!!!
+                    for (l in 1:3){
+                        # Update Mean of z
+                        mu_z <- H[[k]][[n]] %*% w[n, , k]
+                        # Draw latent variable z from its full conditional: z | w, y, X
+                        if (sum_y[k, n] == 0){
+                            z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z, sd = 1, a = -Inf, b = 0)
+                        }else if (sum_y[k, n] == len_y[k, n]){
+                            z[[k]][[n]] <- rtruncnorm(len_y[k, n], mean = mu_z, sd = 1, a = 0, b = Inf)
+                        }else{
+                            z[[k]][[n]][y[[k]][[n]] == 1] <- rtruncnorm(sum_y[k, n], mean = mu_z[y[[k]][[n]] == 1], sd = 1, a = 0, b = Inf)
+                            z[[k]][[n]][y[[k]][[n]] == 0] <- rtruncnorm(len_y[k, n] - sum_y[k, n], mean = mu_z[y[[k]][[n]] == 0], sd = 1, a = -Inf, b = 0)
+                        }
+                        # Compute posterior mean of w
+                        Mu <- V[[k]][[n]] %*% (w_0_prec_0 + crossprod(H[[k]][[n]], z[[k]][[n]]))
+                        # Draw variable \w from its full conditional: \w | z, X
+                        if (M == 1){ w[n, , k] <- c(rnorm(n = 1, mean = Mu, sd = V[[k]][[n]])) }
+                        else{ w[n, , k] <- c(rmvnorm(n = 1, mean = Mu, sigma = V[[k]][[n]])) }
                     }
-                    # Compute posterior mean of w
-                    Mu <- V[[k]][[n]] %*% (w_0_prec_0 + crossprod(H[[k]][[n]], z[[k]][[n]]))
-                    # Draw variable \w from its full conditional: \w | z, X
-                    if (M == 1){ w[n, , k] <- c(rnorm(n = 1, mean = Mu, sd = V[[k]][[n]])) }
-                    else{ w[n, , k] <- c(rmvnorm(n = 1, mean = Mu, sigma = V[[k]][[n]])) }
                 }
             }
         }
@@ -264,8 +287,27 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                 }
             }
         }
+
+        # Handle empty clusters
+        dom_C <- which.max(Ci_k)
+        for (k in 1:K){
+            if (empty_C[k] == 1){
+                w[, , k] <- w[, , dom_C]
+                # message(dom_C)
+                # for (n in 1:N){
+                #     # If we have one basis function
+                #     if (M == 1){ w[n, , k] <- c(rnorm(n = 1, mean = mean(w[n, , dom_C], sd = 1e-8))) }
+                #     else{ w[n, ,k] <- c(rmvnorm(n = 1, mean = w[n, , dom_C], sigma = diag(1e-15, M))) }
+                #
+                #     # # Get all weights except from cluster k
+                #     # w_exc_k <- w[n, , dom_C]
+                #     # if (is.matrix(w_exc_k)){ w[n, ,k] <- c(rmvnorm(n = 1, mean = rowMeans(w_exc_k), sigma = diag(M))) }
+                #     # else{ w[n, ,k] <- c(rmvnorm(n = 1, mean = w_exc_k, sigma = diag(0.05, M))) }
+                # }
+            }
+        }
         C_prev <- C            # Make current cluster indices same as previous
-        if (t > gibbs_burn_in){w_draws[t - gibbs_burn_in, , ,] <- w}   # Store the coefficient draw
+        if (t > gibbs_burn_in){w_draws[t - gibbs_burn_in, , ,] <- w}
         setTxtProgressBar(pb,t)
     }
     close(pb)
