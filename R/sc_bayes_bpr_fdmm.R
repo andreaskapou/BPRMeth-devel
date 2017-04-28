@@ -138,7 +138,6 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                 bpr_likelihood(w = w[y, , k], H = des_mat[[i]][[y]], data = x[[i]][[y]], lambda = lambda, is_NLL = FALSE),
                 FUN.VALUE = numeric(1), USE.NAMES = FALSE)), FUN.VALUE = numeric(1), USE.NAMES = FALSE)
         }
-        # print(w_pdf)
 
         # Use the logSumExp trick for numerical stability
         Z <- apply(w_pdf, 1, .log_sum_exp)
@@ -146,7 +145,6 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
         post_prob <- exp(w_pdf - Z)
         NLL[t] <- -sum(Z)   # Evaluate NLL
 
-        # print(post_prob)
         ## -------------------------------------------------------------------
         # Draw mixture components for ith simulation
         # Sample one point from a Multinomial i.e. ~ Discrete
