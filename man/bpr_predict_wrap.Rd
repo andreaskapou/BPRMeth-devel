@@ -48,7 +48,7 @@ the Negative Log Likelihood as measure of error.}
 \item{cpg_dens_feat}{Logical, whether to return an additional feature for the
 CpG density across the promoter region.}
 
-\item{lambda}{The complexity penalty coefficient for penalized regression.}
+\item{lambda}{The complexity penalty coefficient for ridge regression.}
 
 \item{opt_method}{The optimization method to be used. See
 \code{\link[stats]{optim}} for possible methods. Default is "CG".}

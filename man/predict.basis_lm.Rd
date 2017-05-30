@@ -23,3 +23,6 @@ the Basis Linear Model. This funciton is similar to \code{\link[stats]{lm}},
 however currently it does not provide the \code{\link[stats]{formula}}
 functionality.
 }
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

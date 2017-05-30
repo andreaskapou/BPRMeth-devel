@@ -18,3 +18,6 @@ A summary.basis_lm object
 S3 method for class basis_lm, that computes the summary of the Basis Linear
 Model in a similar way to \code{\link[stats]{lm}}.
 }
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

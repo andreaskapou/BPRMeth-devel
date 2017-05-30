@@ -1,16 +1,16 @@
 #' Fitting linear models using Basis Functions
 #'
 #' \code{basis_lm} is used to fit linear models using basis functions such as
-#' Radial Basis Functions (RBFs) and Fourier and Polynomial Basis Functions.
+#' Radial Basis Functions (RBFs), Fourier and Polynomial basis functions.
 #'
 #' @param x The observations.
 #' @param y The response.
 #' @param basis Basis function object e.g. \code{\link{create_rbf_object}}.
-#' @param lambda Optional parameter for performing penalized least squares.
+#' @param lambda Optional parameter for performing ridge regression.
 #' @param return.all Optional logical, indicating if all the metrics should be
 #'  computed (mainly for efficiency).
 #'
-#' @return An object of class "blm" is a list containing the following
+#' @return An object of class "basis_lm" is a list containing the following
 #'  components:
 #' \itemize{
 #'  \item \code{coefficients} a named vector of coefficients.
@@ -84,6 +84,8 @@ basis_lm <- function(x, y, basis, lambda = 0, return.all = TRUE){
 #'
 #' @return \code{predict.blm} produces a vector of predictions.
 #'
+#' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
+#'
 #' @export
 predict.basis_lm <- function(object, newdata = NULL, ...){
   if(is.null(newdata)){
@@ -106,6 +108,8 @@ predict.basis_lm <- function(object, newdata = NULL, ...){
 #' @param x Object of class \code{\link{basis_lm}}.
 #' @param ... Optional additional parameters.
 #'
+#' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
+#'
 #' @export
 print.basis_lm <- function(x, ...){
   cat("Call:\n")
@@ -124,6 +128,8 @@ print.basis_lm <- function(x, ...){
 #' @param ... Optional additional parameters.
 #'
 #' @return A summary.basis_lm object
+#'
+#' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
 #' @method summary basis_lm
 #' @export

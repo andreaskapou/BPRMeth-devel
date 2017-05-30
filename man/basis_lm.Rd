@@ -13,13 +13,13 @@ basis_lm(x, y, basis, lambda = 0, return.all = TRUE)
 
 \item{basis}{Basis function object e.g. \code{\link{create_rbf_object}}.}
 
-\item{lambda}{Optional parameter for performing penalized least squares.}
+\item{lambda}{Optional parameter for performing ridge regression.}
 
 \item{return.all}{Optional logical, indicating if all the metrics should be
 computed (mainly for efficiency).}
 }
 \value{
-An object of class "blm" is a list containing the following
+An object of class "basis_lm" is a list containing the following
  components:
 \itemize{
  \item \code{coefficients} a named vector of coefficients.
@@ -35,7 +35,7 @@ An object of class "blm" is a list containing the following
 }
 \description{
 \code{basis_lm} is used to fit linear models using basis functions such as
-Radial Basis Functions (RBFs) and Fourier and Polynomial Basis Functions.
+Radial Basis Functions (RBFs), Fourier and Polynomial basis functions.
 }
 \seealso{
 \code{\link{predict.basis_lm}}, \code{\link{create_fourier_object}},

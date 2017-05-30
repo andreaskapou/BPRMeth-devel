@@ -15,3 +15,6 @@
 S3 method for class basis_lm, that prints the output of the Basis Linear Model
 in a similar way to \code{\link[stats]{lm}}.
 }
+\author{
+C.A.Kapourani \email{C.A.Kapourani@ed.ac.uk}
+}

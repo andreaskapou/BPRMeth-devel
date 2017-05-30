@@ -31,7 +31,7 @@ coefficients for each corresponding cluster.}
 
 \item{epsilon_conv}{Numeric denoting the convergence parameter for EM.}
 
-\item{lambda}{The complexity penalty coefficient for penalized regression.}
+\item{lambda}{The complexity penalty coefficient for ridge regression.}
 
 \item{opt_method}{The optimization method to be used. See
 \code{\link[stats]{optim}} for possible methods. Default is "CG".}

@@ -93,6 +93,58 @@ devtools::use_data(meth_data, gex_data, overwrite = TRUE)
 
 
 
+create_lm_data <- function(N = 300, pi.c = c(0.45, 0.35, 0.2), max_L = 25,
+                           true_w = list(w1 = c(-1.1, -2, 2.7, -2),
+                                         w2 = c(2, 1, -2, 1),
+                                         w3 = c(0.4, -0.7, 1.7, 2.8)),
+                             xmin = -100, xmax=100, fmin = -1, fmax = 1){
+    set.seed(123)
+    # Create a list to store data for each methylation region
+    X       <- list()
+
+    # For each of the N objects
+    for (i in 1:N){
+        # L is the number of CpGs found in the ith region
+        L <- rbinom(n = 1, size = max_L, prob = .8)
+        X[[i]] <- matrix(0, nrow = L, ncol = 2)
+        # Randomly sample locations for the CpGs
+        obs <- sort(sample(xmin:xmax, L))
+        # Scale them, so the data lie in the (fmin, fmax) range
+        X[[i]][, 1] <- BPRMeth:::.minmax_scaling(data = obs,
+                                                 xmin = xmin,
+                                                 xmax = xmax,
+                                                 fmin = fmin,
+                                                 fmax = fmax)
+
+        # Choose function to generate the data
+        if (i < N * pi.c[1])
+            cl_label <- 1
+        else if (i < (N * pi.c[2] + N * pi.c[1]))
+            cl_label <- 2
+        else
+            cl_label <- 3
+        # Randomly sample a cluster to generate data from
+        # cl_label <- sample(x = 3, size = 1, prob = pi.c)
+
+        # Set corresponding weights
+        w <- true_w[[cl_label]]
+        # Create basis function object
+        basis <- create_rbf_object(M = 3)
+        # Create design matrix
+        H <- BPRMeth::design_matrix(basis, X[[i]][ ,1])$H
+        # Compute mean of data
+        mu <- H %*% w
+        # Randomly generate data from this function
+        X[[i]][, 2] <- rnorm(L, mu, 0.1)
+    }
+    return(X)
+}
+
+set.seed(1)
+lm_out <- create_lm_data(N=600)
+lm_data <- lm_out
+devtools::use_data(lm_data, overwrite = TRUE)
+
 
 
 

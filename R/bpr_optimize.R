@@ -21,7 +21,7 @@
 #'   the Negative Log Likelihood as measure of error.
 #' @param cpg_dens_feat Logical, whether to return an additional feature for the
 #'   CpG density across the promoter region.
-#' @param lambda The complexity penalty coefficient for penalized regression.
+#' @param lambda The complexity penalty coefficient for ridge regression.
 #' @param opt_method The optimization method to be used. See
 #'   \code{\link[stats]{optim}} for possible methods. Default is "CG".
 #' @param opt_itnmax Optional argument giving the maximum number of iterations
