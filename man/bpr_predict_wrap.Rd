@@ -42,8 +42,8 @@ dataset to be used for training set, the remaining will be the test set.}
 \item{fit_feature}{Return additional feature on how well the profile fits the
 methylation data. Either NULL for ignoring this feature or one of the
 following: 1) "RMSE" for returning the fit of the profile using the RMSE as
-measure of error or 2) "NLL" for returning the fit of the profile using
-the Negative Log Likelihood as measure of error.}
+measure of error or 2) "NLL" for returning the fit of the profile using the
+Negative Log Likelihood as measure of error.}
 
 \item{cpg_dens_feat}{Logical, whether to return an additional feature for the
 CpG density across the promoter region.}

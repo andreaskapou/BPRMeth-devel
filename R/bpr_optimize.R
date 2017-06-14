@@ -12,13 +12,14 @@
 #' @param x The input object, either a \code{\link[base]{matrix}} or a
 #'   \code{\link[base]{list}}.
 #' @param ... Additional parameters.
+#' @param H The pre-computed design matrix for fast computations.
 #' @param w A vector of parameters (i.e. coefficients of the basis functions)
 #' @param basis A 'basis' object. E.g. see \code{\link{create_rbf_object}}.
 #' @param fit_feature Return additional feature on how well the profile fits the
 #'   methylation data. Either NULL for ignoring this feature or one of the
 #'   following: 1) "RMSE" for returning the fit of the profile using the RMSE as
-#'   measure of error or 2) "NLL" for returning the fit of the profile using
-#'   the Negative Log Likelihood as measure of error.
+#'   measure of error or 2) "NLL" for returning the fit of the profile using the
+#'   Negative Log Likelihood as measure of error.
 #' @param cpg_dens_feat Logical, whether to return an additional feature for the
 #'   CpG density across the promoter region.
 #' @param lambda The complexity penalty coefficient for ridge regression.
@@ -41,7 +42,8 @@
 #'   \code{\link[base]{matrix}}:} An object containing the following elements:
 #'   \itemize{ \item{ \code{w_opt}: Optimized values for the coefficient vector
 #'   w. The length of the result is the same as the length of the vector w. }
-#'   \item{ \code{basis}: The basis object. } }}
+#'   \item{ \code{basis}: The basis object. } } \item{If calling
+#'   \code{bpr_optim_fast} just the optimal weight matrix W_opt.} }
 #'
 #' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
@@ -249,6 +251,90 @@ bpr_optim.matrix <- function(x, w = NULL, basis = NULL, fit_feature = "RMSE",
     return(list(w_opt = w_opt,
                 basis = basis))
 }
+
+
+#' @rdname bpr_optimize
+#'
+#' @examples
+#' # Example of optimizing parameters for synthetic data using 3 RBFs
+#' ex_data <- meth_data
+#' basis <- create_rbf_object(M=3)
+#' H <- list()
+#' for (i in 1:length(ex_data)){
+#'   H[[i]] <- design_matrix(x = basis, obs = as.vector(ex_data[[i]][, 1]))$H
+#' }
+#' w <- rep(0.5, basis$M + 1)
+#' out_opt <- bpr_optim_fast(x = ex_data, H = H, w = w, is_parallel = FALSE,
+#'                           opt_itnmax = 10)
+#'
+#' #-------------------------------------
+#'
+#' @export
+bpr_optim_fast <- function(x, H, w = NULL, lambda = 1/6, opt_method = "CG",
+                           opt_itnmax = 100, is_parallel = TRUE,
+                           no_cores = NULL, ...){
+
+    assertthat::assert_that(is.list(x)) # Check that x is a list object
+    N <- length(x)                      # Extract number of observations
+    if(is.null(w)){ w <- rep(0.5, NCOL(H)) }
+
+    # Initialize so the CMD check on R passes without NOTES
+    i <- 0
+    # If parallel mode is ON
+    if (is_parallel){
+        # If number of cores is not given
+        if (is.null(no_cores)){ no_cores <- parallel::detectCores() - 2 }
+        else{
+            if (no_cores >= parallel::detectCores()){
+                no_cores <- parallel::detectCores() - 1
+            }
+        }
+        if (is.na(no_cores)){ no_cores <- 2 }
+        # Create cluster object
+        cl <- parallel::makeCluster(no_cores)
+        doParallel::registerDoParallel(cl)
+
+        # Parallel optimization for each element of x, i.e. for each region i.
+        res <- foreach::"%dopar%"(obj = foreach::foreach(i = 1:N),
+                                  ex  = {
+                      out_opt <- optim(par     = w,
+                                       fn      = bpr_likelihood,
+                                       gr      = bpr_gradient,
+                                       method  = opt_method,
+                                       control = list(maxit = opt_itnmax),
+                                       H       = H[[i]],
+                                       data    = x[[i]],
+                                       lambda  = lambda,
+                                       is_NLL  = TRUE)$par
+                                  })
+        # Stop parallel execution
+        parallel::stopCluster(cl)
+        doParallel::stopImplicitCluster()
+    }else{
+        # Sequential optimization for each element of x, i.e. for each region i.
+        res <- foreach::"%do%"(obj = foreach::foreach(i = 1:N),
+                               ex  = {
+                       out_opt <- optim(par     = w,
+                                        fn      = bpr_likelihood,
+                                        gr      = bpr_gradient,
+                                        method  = opt_method,
+                                        control = list(maxit = opt_itnmax),
+                                        H       = H[[i]],
+                                        data    = x[[i]],
+                                        lambda  = lambda,
+                                        is_NLL  = TRUE)$par
+                               })
+    }
+
+    # Matrix for storing optimized coefficients
+    W_opt <- sapply(res, function(x) x)
+    if (is.matrix(W_opt)){ W_opt <- t(W_opt) }
+    else{ W_opt <- as.matrix(W_opt) }
+    colnames(W_opt) <- paste("w", seq(1, NCOL(W_opt)), sep = "")
+
+    return(list(W_opt = W_opt))
+}
+
 
 
 # Internal function to make all the appropriate type checks.

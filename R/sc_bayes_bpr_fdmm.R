@@ -109,6 +109,8 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
     des_mat <- list() # Create design matrix for each cell for each promoter region
     for (i in 1:I){
         des_mat[[i]] <- vector(mode = "list", length = N)
+        # TODO: Should we do this??
+        des_mat[[i]] <- lapply(des_mat[[i]], function(x) x = NA)
         ind[[i]]     <- which(!is.na(x[[i]]))
         if (is_parallel){  # TODO: Make this function faster?
             des_mat[[i]][ind[[i]]] <- parallel::mclapply(X = x[[i]][ind[[i]]], FUN = function(y)
@@ -192,6 +194,8 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
                     yy <- vector(mode = "integer")
                     # Concatenate the nth promoter from all cells in cluster k
                     tmp <- lapply(des_mat, "[[", n)[C_idx]
+
+                    # TODO: Is this NULL or NA???
                     tmp <- do.call(rbind, tmp[!is.na(tmp)])
                     # TODO: Check when we have empty promoters....
                     if (is.null(tmp)) {

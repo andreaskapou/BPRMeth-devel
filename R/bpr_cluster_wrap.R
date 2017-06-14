@@ -318,10 +318,9 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
 
 
 # Internal function to make all the appropriate type checks.
-.do_EM_checks <- function(x, K = 2, pi_k = NULL,  w = NULL, basis = NULL,
-                          lambda = 1/2, opt_method = "CG",
-                          init_opt_itnmax = 100, is_parallel = TRUE,
-                          no_cores = NULL){
+.do_EM_checks <- function(x, K = 2, pi_k,  w, basis, lambda = 1/2,
+                          opt_method = "CG", init_opt_itnmax = 100,
+                          is_parallel = TRUE, no_cores = NULL){
     if (is.null(basis)){
         basis <- create_rbf_object(M = 3)
     }

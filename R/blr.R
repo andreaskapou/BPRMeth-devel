@@ -1,6 +1,6 @@
 #' Fitting linear models using Basis Functions
 #'
-#' \code{basis_lm} is used to fit linear models using basis functions such as
+#' \code{blr} is used to fit linear models using basis functions such as
 #' Radial Basis Functions (RBFs), Fourier and Polynomial basis functions.
 #'
 #' @param x The observations.
@@ -24,13 +24,13 @@
 #'  \item \code{call} the matched call.
 #' }
 #'
-#' @seealso \code{\link{predict.basis_lm}}, \code{\link{create_fourier_object}},
-#'  \code{\link{create_rbf_object}}, \code{\link{summary.basis_lm}}
+#' @seealso \code{\link{predict.blr}}, \code{\link{create_fourier_object}},
+#'  \code{\link{create_rbf_object}}, \code{\link{summary.blr}}
 #'
 #' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
 #' @export
-basis_lm <- function(x, y, basis, lambda = 0, return.all = TRUE){
+blr <- function(x, y, basis, lambda = 0, return.all = TRUE){
   est <- list(basis = basis, lambda = lambda)
   # Create the design matrix
   des_mat <- design_matrix(x = basis, obs = x)
@@ -64,7 +64,7 @@ basis_lm <- function(x, y, basis, lambda = 0, return.all = TRUE){
     colnames(est$vcov) <- rownames(est$vcov) <- colnames(H)
   }
   est$call <- match.call()
-  class(est) <- "basis_lm"
+  class(est) <- "blr"
 
   return(est)
 }
@@ -72,22 +72,22 @@ basis_lm <- function(x, y, basis, lambda = 0, return.all = TRUE){
 
 #' Make predictions using the Basis Linear Model
 #'
-#' S3 method for class basis_lm, that makes predictions for \code{newdata} using
+#' S3 method for class blr, that makes predictions for \code{newdata} using
 #' the Basis Linear Model. This funciton is similar to \code{\link[stats]{lm}},
 #' however currently it does not provide the \code{\link[stats]{formula}}
 #' functionality.
 #'
-#' @param object Object of class \code{\link{basis_lm}}.
+#' @param object Object of class \code{\link{blr}}.
 #' @param newdata An optional data frame in which to look for variables with
 #'  which to predict. If omitted, the fitted values are used.
 #' @param ... Optional additional parameters.
 #'
-#' @return \code{predict.blm} produces a vector of predictions.
+#' @return \code{predict.blr} produces a vector of predictions.
 #'
 #' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
 #' @export
-predict.basis_lm <- function(object, newdata = NULL, ...){
+predict.blr <- function(object, newdata = NULL, ...){
   if(is.null(newdata)){
     y <- stats::fitted(object)
   }
@@ -105,13 +105,13 @@ predict.basis_lm <- function(object, newdata = NULL, ...){
 #' S3 method for class basis_lm, that prints the output of the Basis Linear Model
 #' in a similar way to \code{\link[stats]{lm}}.
 #'
-#' @param x Object of class \code{\link{basis_lm}}.
+#' @param x Object of class \code{\link{blr}}.
 #' @param ... Optional additional parameters.
 #'
 #' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
 #' @export
-print.basis_lm <- function(x, ...){
+print.blr <- function(x, ...){
   cat("Call:\n")
   print(x$call)
   cat("\nCoefficients:\n")
@@ -121,19 +121,19 @@ print.basis_lm <- function(x, ...){
 
 #' Summary output of the Basis Linear Model
 #'
-#' S3 method for class basis_lm, that computes the summary of the Basis Linear
+#' S3 method for class blr, that computes the summary of the Basis Linear
 #' Model in a similar way to \code{\link[stats]{lm}}.
 #'
-#' @param object Object of class \code{\link{basis_lm}}.
+#' @param object Object of class \code{\link{blr}}.
 #' @param ... Optional additional parameters.
 #'
-#' @return A summary.basis_lm object
+#' @return A summary.blr object
 #'
 #' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
-#' @method summary basis_lm
+#' @method summary blr
 #' @export
-summary.basis_lm <- function(object, ...){
+summary.blr <- function(object, ...){
   se <- sqrt(diag(object$vcov))
   tval <- stats::coef(object) / se
 
@@ -144,21 +144,21 @@ summary.basis_lm <- function(object, ...){
   colnames(TAB) <- c("Estimate", "Std.Err", "t value", "Pr(>|t|)")
   res <- structure(list(call = object$call,
                         coefficients = TAB),
-                   class = "summary.basis_lm")
+                   class = "summary.blr")
   return(res)
 }
 
 
 #' Print summary output of the Basis Linear Model
 #'
-#' S3 method for class summary.basis_lm, that prints the summary of the Basis
+#' S3 method for class summary.blr, that prints the summary of the Basis
 #' Linear Model in a similar way to \code{\link[stats]{lm}}.
 #'
-#' @param x Object of class \code{\link{summary.basis_lm}}.
+#' @param x Object of class \code{\link{summary.blr}}.
 #' @param ... Optional additional parameters.
 #'
 #' @export
-print.summary.basis_lm <- function(x, ...){
+print.summary.blr <- function(x, ...){
   cat("Call:\n")
   print(x$call)
   cat("\n")

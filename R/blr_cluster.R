@@ -1,6 +1,6 @@
 #' Cluster methylation profiles with Gaussian noise
 #'
-#' \code{basis_lm_cluster} is a wrapper function that clusters methylation
+#' \code{blr_cluster} is a wrapper function that clusters methylation
 #' profiles using the EM algorithm. Initially, it performs parameter checking,
 #' and initializes main parameters, such as mixing proportions, basis function
 #' coefficients, then the EM algorithm is applied and finally model selection
@@ -21,7 +21,7 @@
 #' @param lambda The complexity penalty coefficient for ridge regression.
 #' @param is_verbose Logical, print results during EM iterations.
 #'
-#' @return A 'basis_lm_cluster' object which, in addition to the input
+#' @return A 'blr_cluster' object which, in addition to the input
 #'   parameters, consists of the following variables: \itemize{
 #'   \item{\code{pi_k}: Fitted mixing proportions.} \item{\code{w}: A MxK matrix
 #'   with the fitted coefficients of the basis functions for each cluster k.}
@@ -37,10 +37,10 @@
 #'
 #' @examples
 #' ex_data <- meth_data
-#' gr_lm_clust <- basis_lm_cluster(x = lm_data, em_max_iter = 100, is_verbose = TRUE)
+#' my_clust <- blr_cluster(x = lm_data, em_max_iter = 100, is_verbose = TRUE)
 #'
 #' @export
-basis_lm_cluster <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
+blr_cluster <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                              s2 = NULL, em_max_iter = 100, epsilon_conv = 1e-04,
                              lambda = 1/10, is_verbose = FALSE){
     # Check that x is a list object
@@ -51,7 +51,7 @@ basis_lm_cluster <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
     assertthat::assert_that(N > 0)
 
     # Perform checks for initial parameter values
-    out <- .do_gr_EM_checks(x = x,
+    out <- .do_blr_EM_checks(x = x,
                             K = K,
                             pi_k = pi_k,
                             w = w,
@@ -185,14 +185,14 @@ basis_lm_cluster <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
                           na.rm = TRUE)
     bpr_cluster$ICL <- bpr_cluster$BIC + entropy
 
-    class(bpr_cluster) <- "basis_lm_cluster"
+    class(bpr_cluster) <- "blr_cluster"
 
     return(bpr_cluster)
 }
 
 
 # Internal function to make all the appropriate type checks.
-.do_gr_EM_checks <- function(x, K = 2, pi_k = NULL,  w = NULL, s2 = NULL, basis = NULL,
+.do_blr_EM_checks <- function(x, K = 2, pi_k = NULL,  w = NULL, s2 = NULL, basis = NULL,
                           lambda = 1/10){
     if (is.null(basis)){
         basis <- create_rbf_object(M = 3)
@@ -203,7 +203,7 @@ basis_lm_cluster <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
         # Keep only the optimized coefficients
         W_opt <- matrix(0, ncol = length(w), nrow = length(x))
         for (i in 1:length(x)){
-            W_opt[i, ] <- basis_lm(x = x[[i]][, 1],
+            W_opt[i, ] <- blr(x = x[[i]][, 1],
                                    y = x[[i]][, 2],
                                    basis = basis,
                                    lambda = lambda,

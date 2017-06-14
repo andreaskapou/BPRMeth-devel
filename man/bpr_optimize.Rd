@@ -6,6 +6,7 @@
 \alias{bpr_optim}
 \alias{bpr_optim.list}
 \alias{bpr_optim.matrix}
+\alias{bpr_optim_fast}
 \title{Optimize BPR negative log likelihood function}
 \usage{
 bpr_optim(x, ...)
@@ -17,6 +18,9 @@ bpr_optim(x, ...)
 \method{bpr_optim}{matrix}(x, w = NULL, basis = NULL,
   fit_feature = "RMSE", cpg_dens_feat = TRUE, lambda = 1/2,
   opt_method = "CG", opt_itnmax = 100, ...)
+
+bpr_optim_fast(x, H, w = NULL, lambda = 1/6, opt_method = "CG",
+  opt_itnmax = 100, is_parallel = TRUE, no_cores = NULL, ...)
 }
 \arguments{
 \item{x}{The input object, either a \code{\link[base]{matrix}} or a
@@ -31,8 +35,8 @@ bpr_optim(x, ...)
 \item{fit_feature}{Return additional feature on how well the profile fits the
 methylation data. Either NULL for ignoring this feature or one of the
 following: 1) "RMSE" for returning the fit of the profile using the RMSE as
-measure of error or 2) "NLL" for returning the fit of the profile using
-the Negative Log Likelihood as measure of error.}
+measure of error or 2) "NLL" for returning the fit of the profile using the
+Negative Log Likelihood as measure of error.}
 
 \item{cpg_dens_feat}{Logical, whether to return an additional feature for the
 CpG density across the promoter region.}
@@ -48,6 +52,8 @@ for the corresponding method. See \code{\link[stats]{optim}} for details.}
 \item{is_parallel}{Logical, indicating if code should be run in parallel.}
 
 \item{no_cores}{Number of cores to be used, default is max_no_cores - 2.}
+
+\item{H}{The pre-computed design matrix for fast computations.}
 }
 \value{
 Depending on the input object \code{x}: \itemize{\item{If \code{x} is
@@ -62,7 +68,8 @@ Depending on the input object \code{x}: \itemize{\item{If \code{x} is
   \code{\link[base]{matrix}}:} An object containing the following elements:
   \itemize{ \item{ \code{w_opt}: Optimized values for the coefficient vector
   w. The length of the result is the same as the length of the vector w. }
-  \item{ \code{basis}: The basis object. } }}
+  \item{ \code{basis}: The basis object. } } \item{If calling
+  \code{bpr_optim_fast} just the optimal weight matrix W_opt.} }
 }
 \description{
 The function bpr_optimize minimizes the negative log likelihood
@@ -91,6 +98,19 @@ w <- c(0.1, 0.1, 0.1)
 data <- meth_data[[1]]
 out_opt <- bpr_optim(x = data, w = w, basis = basis, fit_feature = "NLL",
                      opt_itnmax = 10)
+
+# Example of optimizing parameters for synthetic data using 3 RBFs
+ex_data <- meth_data
+basis <- create_rbf_object(M=3)
+H <- list()
+for (i in 1:length(ex_data)){
+  H[[i]] <- design_matrix(x = basis, obs = as.vector(ex_data[[i]][, 1]))$H
+}
+w <- rep(0.5, basis$M + 1)
+out_opt <- bpr_optim_fast(x = ex_data, H = H, w = w, is_parallel = FALSE,
+                          opt_itnmax = 10)
+
+#-------------------------------------
 
 }
 \seealso{
