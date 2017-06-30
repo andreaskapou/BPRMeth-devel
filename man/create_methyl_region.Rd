@@ -2,9 +2,17 @@
 % Please edit documentation in R/create_methyl_region.R
 \name{create_methyl_region}
 \alias{create_methyl_region}
+\alias{methyl_region,}
+\alias{met_region}
+\alias{create_methyl_region}
+\alias{create_methyl_region_array}
 \title{Create methylation regions for each gene promoter.}
 \usage{
 create_methyl_region(bs_data, prom_region, cpg_density = 10,
+  sd_thresh = 0.1, ignore_strand = TRUE, is_single_cell = FALSE,
+  fmin = -1, fmax = 1)
+
+create_methyl_region_array(bs_data, prom_region, cpg_density = 10,
   sd_thresh = 0.1, ignore_strand = TRUE, is_single_cell = FALSE,
   fmin = -1, fmax = 1)
 }
@@ -58,10 +66,10 @@ A \code{methyl_region} object containing the following information:
   \code{prom_ind} should be the same.
 }
 \description{
-\code{create_methyl_region} creates methylation regions using BS-Seq and
-annotated gene promoter regions. BS-Seq data give information for the
-methylation of CpGs individually, and annotated data are used to locate the
-TSS of each gene and its promoter region.
+\code{create_methyl_region} creates methylation regions using
+  BS-Seq and annotated gene promoter regions. BS-Seq data give information
+  for the methylation of CpGs individually, and annotated data are used to
+  locate the TSS of each gene and its promoter region.
 }
 \examples{
 # Obtain the path to the BS file and then read it
