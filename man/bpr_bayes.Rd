@@ -12,11 +12,12 @@ bpr_bayes(x, ...)
 \method{bpr_bayes}{list}(x, w_mle = NULL, basis = NULL,
   fit_feature = NULL, cpg_dens_feat = FALSE, w_0_mean = NULL,
   w_0_cov = NULL, gibbs_nsim = 20, gibbs_burn_in = 10,
-  is_parallel = TRUE, no_cores = NULL, ...)
+  keep_gibbs_draws = FALSE, is_parallel = TRUE, no_cores = NULL, ...)
 
 \method{bpr_bayes}{matrix}(x, w_mle = NULL, basis = NULL,
   fit_feature = NULL, cpg_dens_feat = FALSE, w_0_mean = NULL,
-  w_0_cov = NULL, gibbs_nsim = 20, gibbs_burn_in = 10, ...)
+  w_0_cov = NULL, gibbs_nsim = 20, gibbs_burn_in = 10,
+  keep_gibbs_draws = FALSE, ...)
 }
 \arguments{
 \item{x}{The input object, either a \code{\link[base]{matrix}} or a
@@ -47,6 +48,9 @@ Gibbs sampler.}
 
 \item{gibbs_burn_in}{Optional argument giving the burn in period of the Gibbs
 sampler.}
+
+\item{keep_gibbs_draws}{Logical indicating if we should keep the whole MCMC
+chain for further analysis.}
 
 \item{is_parallel}{Logical, indicating if code should be run in parallel.}
 

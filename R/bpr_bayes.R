@@ -27,6 +27,8 @@
 #'   Gibbs sampler.
 #' @param gibbs_burn_in Optional argument giving the burn in period of the Gibbs
 #'   sampler.
+#' @param keep_gibbs_draws Logical indicating if we should keep the whole MCMC
+#'   chain for further analysis.
 #' @param is_parallel Logical, indicating if code should be run in parallel.
 #' @param no_cores Number of cores to be used, default is max_no_cores - 2.
 #'
@@ -78,7 +80,8 @@ bpr_bayes.default <- function(x, ...){
 bpr_bayes.list <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
                            cpg_dens_feat = FALSE, w_0_mean = NULL,
                            w_0_cov = NULL, gibbs_nsim = 20, gibbs_burn_in = 10,
-                           is_parallel = TRUE, no_cores = NULL, ...){
+                           keep_gibbs_draws = FALSE, is_parallel = TRUE,
+                           no_cores = NULL, ...){
     # Check that x is a list object
     assertthat::assert_that(is.list(x))
 
@@ -138,16 +141,17 @@ bpr_bayes.list <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
         # Parallel optimization for each element of x, i.e. for each region i.
         res <- foreach::"%dopar%"(obj = foreach::foreach(i = 1:N),
                                   ex  = {
-                  out_opt <- bpr_bayes.matrix(x           = x[[i]],
-                                              w_mle       = w_mle[i, ],
-                                              basis       = basis,
-                                              fit_feature = fit_feature,
-                                              cpg_dens_feat = cpg_dens_feat,
-                                              w_0_mean    = w_0_mean,
-                                              w_0_cov     = w_0_cov,
-                                              gibbs_nsim  = gibbs_nsim,
-                                              gibbs_burn_in = gibbs_burn_in)
-                                  })
+                out_opt <- bpr_bayes.matrix(x           = x[[i]],
+                                            w_mle       = w_mle[i, ],
+                                            basis       = basis,
+                                            fit_feature = fit_feature,
+                                            cpg_dens_feat = cpg_dens_feat,
+                                            w_0_mean    = w_0_mean,
+                                            w_0_cov     = w_0_cov,
+                                            gibbs_nsim  = gibbs_nsim,
+                                            gibbs_burn_in = gibbs_burn_in,
+                                            keep_gibbs_draws = keep_gibbs_draws)
+                                })
         # Stop parallel execution
         parallel::stopCluster(cl)
     }else{
@@ -162,7 +166,8 @@ bpr_bayes.list <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
                                            w_0_mean    = w_0_mean,
                                            w_0_cov     = w_0_cov,
                                            gibbs_nsim  = gibbs_nsim,
-                                           gibbs_burn_in = gibbs_burn_in)
+                                           gibbs_burn_in = gibbs_burn_in,
+                                           keep_gibbs_draws = keep_gibbs_draws)
                                })
     }
 
@@ -170,6 +175,7 @@ bpr_bayes.list <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
     # Matrix for storing optimized coefficients
     W_opt <- sapply(res, function(x) x$w_opt)
     W_var <- sapply(res, function(x) x$w_var)
+    W_draws <- lapply(res, function(x) x$w_draws)
     if (is.matrix(W_opt)){
         W_opt <- t(W_opt)
         W_var <- t(W_var)
@@ -196,6 +202,7 @@ bpr_bayes.list <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
 
     return(list(W_opt = W_opt,
                 W_var = W_var,
+                W_draws = W_draws,
                 Mus = Mus,
                 basis = basis))
 }
@@ -228,7 +235,7 @@ bpr_bayes.list <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
 bpr_bayes.matrix <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
                              cpg_dens_feat = FALSE, w_0_mean = NULL,
                              w_0_cov = NULL, gibbs_nsim = 20,
-                             gibbs_burn_in = 10, ...){
+                             gibbs_burn_in = 10, keep_gibbs_draws = FALSE, ...){
 
     # Vector for storing CpG locations relative to TSS
     obs <- as.vector(x[ ,1])
@@ -303,9 +310,20 @@ bpr_bayes.matrix <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
     if (M == 1){
         w_opt <- mean(w_chain[-(1:gibbs_burn_in)])
         w_var <- var(w_chain[-(1:gibbs_burn_in)])
+        if (keep_gibbs_draws){
+            w_draws <- w_chain[-(1:gibbs_burn_in)]
+        }else{
+            w_draws <- NULL
+        }
+
     }else{
         w_opt <- colMeans(w_chain[-(1:gibbs_burn_in), ])
         w_var <- apply(w_chain[-(1:gibbs_burn_in), ], 2, var)
+        if (keep_gibbs_draws){
+            w_draws <- w_chain[-(1:gibbs_burn_in), ]
+        }else{
+            w_draws <- NULL
+        }
     }
 
     # If we need to add the goodness of fit to the data as feature
@@ -331,6 +349,7 @@ bpr_bayes.matrix <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
 
     return(list(w_opt = w_opt,
                 w_var = w_var,
+                w_draws = w_draws,
                 basis = basis))
 }
 

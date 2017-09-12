@@ -36,7 +36,6 @@
 #' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
 #' @examples
-#' ex_data <- meth_data
 #' my_clust <- blr_cluster(x = lm_data, em_max_iter = 100, is_verbose = TRUE)
 #'
 #' @export

@@ -290,11 +290,17 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
         if (NLL[t] - NLL[t + 1] < epsilon_conv){
             break
         }
+        if (K == 1){
+            w <- as.matrix(w)
+        }
     }
     if (is_parallel){
         # Stop parallel execution
         parallel::stopCluster(cl)
         doParallel::stopImplicitCluster()
+    }
+    if (K == 1){
+        w <- as.matrix(w)
     }
     # Check if EM converged in the given maximum iterations
     if (t == em_max_iter){
