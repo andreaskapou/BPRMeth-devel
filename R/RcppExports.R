@@ -5,41 +5,41 @@
 #'
 #' @export
 bpr_likelihood <- function(w, H, data, lambda, is_NLL) {
-    .Call('BPRMeth_bpr_likelihood', PACKAGE = 'BPRMeth', w, H, data, lambda, is_NLL)
+    .Call('_BPRMeth_bpr_likelihood', PACKAGE = 'BPRMeth', w, H, data, lambda, is_NLL)
 }
 
 #' @rdname bpr_model
 #'
 #' @export
 bpr_gradient <- function(w, H, data, lambda, is_NLL) {
-    .Call('BPRMeth_bpr_gradient', PACKAGE = 'BPRMeth', w, H, data, lambda, is_NLL)
+    .Call('_BPRMeth_bpr_gradient', PACKAGE = 'BPRMeth', w, H, data, lambda, is_NLL)
 }
 
 #' @rdname bpr_model
 #'
 #' @export
 bpr_lik_region <- function(w, x, des_mat, lambda, is_NLL) {
-    .Call('BPRMeth_bpr_lik_region', PACKAGE = 'BPRMeth', w, x, des_mat, lambda, is_NLL)
+    .Call('_BPRMeth_bpr_lik_region', PACKAGE = 'BPRMeth', w, x, des_mat, lambda, is_NLL)
 }
 
 #' @rdname bpr_model
 #'
 #' @export
 bpr_lik_resp <- function(w, x, des_mat, pi_k, lambda, is_NLL) {
-    .Call('BPRMeth_bpr_lik_resp', PACKAGE = 'BPRMeth', w, x, des_mat, pi_k, lambda, is_NLL)
+    .Call('_BPRMeth_bpr_lik_resp', PACKAGE = 'BPRMeth', w, x, des_mat, pi_k, lambda, is_NLL)
 }
 
 #' @rdname bpr_model
 #'
 #' @export
 sum_weighted_bpr_lik <- function(w, x, des_mat, post_prob, lambda, is_NLL) {
-    .Call('BPRMeth_sum_weighted_bpr_lik', PACKAGE = 'BPRMeth', w, x, des_mat, post_prob, lambda, is_NLL)
+    .Call('_BPRMeth_sum_weighted_bpr_lik', PACKAGE = 'BPRMeth', w, x, des_mat, post_prob, lambda, is_NLL)
 }
 
 #' @rdname bpr_model
 #'
 #' @export
 sum_weighted_bpr_grad <- function(w, x, des_mat, post_prob, lambda, is_NLL) {
-    .Call('BPRMeth_sum_weighted_bpr_grad', PACKAGE = 'BPRMeth', w, x, des_mat, post_prob, lambda, is_NLL)
+    .Call('_BPRMeth_sum_weighted_bpr_grad', PACKAGE = 'BPRMeth', w, x, des_mat, post_prob, lambda, is_NLL)
 }
 

@@ -54,7 +54,6 @@ coefficients, then the EM algorithm is applied and finally model selection
 metrics are calculated, such as BIC and AIC.
 }
 \examples{
-ex_data <- meth_data
 my_clust <- blr_cluster(x = lm_data, em_max_iter = 100, is_verbose = TRUE)
 
 }

@@ -254,10 +254,10 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL, l
     return(obj)
 }
 
-#'
-#' Optimize a promoter regions across cells, which are weighted by the
-#' responsibilities of belonging to each cluster.
-#'
+#
+# Optimize a promoter regions across cells, which are weighted by the
+# responsibilities of belonging to each cluster.
+#
 optim_regions <- function(x, H, w, K, opt_method = opt_method, opt_itnmax, post_prob, lambda){
     covered_ind <- which(!is.na(H))
     if (is.vector(w)){ w <- matrix(w, ncol = K) }

@@ -16,6 +16,8 @@
 #' @importFrom Rcpp evalCpp
 #' @useDynLib BPRMeth
 #'
+#' @import RcppArmadillo
+#'
 .datatable.aware <- TRUE
 NULL
 #> NULL

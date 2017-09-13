@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // bpr_likelihood
 double bpr_likelihood(const arma::vec& w, const arma::mat& H, const arma::mat& data, const double lambda, const bool is_NLL);
-RcppExport SEXP BPRMeth_bpr_likelihood(SEXP wSEXP, SEXP HSEXP, SEXP dataSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
+RcppExport SEXP _BPRMeth_bpr_likelihood(SEXP wSEXP, SEXP HSEXP, SEXP dataSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -23,7 +23,7 @@ END_RCPP
 }
 // bpr_gradient
 Rcpp::NumericVector bpr_gradient(const arma::vec& w, const arma::mat& H, const arma::mat& data, const double lambda, const bool is_NLL);
-RcppExport SEXP BPRMeth_bpr_gradient(SEXP wSEXP, SEXP HSEXP, SEXP dataSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
+RcppExport SEXP _BPRMeth_bpr_gradient(SEXP wSEXP, SEXP HSEXP, SEXP dataSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -38,7 +38,7 @@ END_RCPP
 }
 // bpr_lik_region
 Rcpp::NumericVector bpr_lik_region(const arma::vec& w, const Rcpp::List& x, const Rcpp::List& des_mat, const double lambda, const bool is_NLL);
-RcppExport SEXP BPRMeth_bpr_lik_region(SEXP wSEXP, SEXP xSEXP, SEXP des_matSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
+RcppExport SEXP _BPRMeth_bpr_lik_region(SEXP wSEXP, SEXP xSEXP, SEXP des_matSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -53,7 +53,7 @@ END_RCPP
 }
 // bpr_lik_resp
 Rcpp::NumericMatrix bpr_lik_resp(const arma::mat& w, const Rcpp::List& x, const Rcpp::List& des_mat, const arma::vec pi_k, const double lambda, const bool is_NLL);
-RcppExport SEXP BPRMeth_bpr_lik_resp(SEXP wSEXP, SEXP xSEXP, SEXP des_matSEXP, SEXP pi_kSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
+RcppExport SEXP _BPRMeth_bpr_lik_resp(SEXP wSEXP, SEXP xSEXP, SEXP des_matSEXP, SEXP pi_kSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -69,7 +69,7 @@ END_RCPP
 }
 // sum_weighted_bpr_lik
 double sum_weighted_bpr_lik(const arma::vec& w, const Rcpp::List& x, const Rcpp::List& des_mat, const arma::vec& post_prob, const double lambda, const bool is_NLL);
-RcppExport SEXP BPRMeth_sum_weighted_bpr_lik(SEXP wSEXP, SEXP xSEXP, SEXP des_matSEXP, SEXP post_probSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
+RcppExport SEXP _BPRMeth_sum_weighted_bpr_lik(SEXP wSEXP, SEXP xSEXP, SEXP des_matSEXP, SEXP post_probSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -85,7 +85,7 @@ END_RCPP
 }
 // sum_weighted_bpr_grad
 arma::rowvec sum_weighted_bpr_grad(const arma::vec& w, const Rcpp::List& x, const Rcpp::List& des_mat, const arma::vec& post_prob, const double lambda, const bool is_NLL);
-RcppExport SEXP BPRMeth_sum_weighted_bpr_grad(SEXP wSEXP, SEXP xSEXP, SEXP des_matSEXP, SEXP post_probSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
+RcppExport SEXP _BPRMeth_sum_weighted_bpr_grad(SEXP wSEXP, SEXP xSEXP, SEXP des_matSEXP, SEXP post_probSEXP, SEXP lambdaSEXP, SEXP is_NLLSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -98,4 +98,19 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(sum_weighted_bpr_grad(w, x, des_mat, post_prob, lambda, is_NLL));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_BPRMeth_bpr_likelihood", (DL_FUNC) &_BPRMeth_bpr_likelihood, 5},
+    {"_BPRMeth_bpr_gradient", (DL_FUNC) &_BPRMeth_bpr_gradient, 5},
+    {"_BPRMeth_bpr_lik_region", (DL_FUNC) &_BPRMeth_bpr_lik_region, 5},
+    {"_BPRMeth_bpr_lik_resp", (DL_FUNC) &_BPRMeth_bpr_lik_resp, 6},
+    {"_BPRMeth_sum_weighted_bpr_lik", (DL_FUNC) &_BPRMeth_sum_weighted_bpr_lik, 6},
+    {"_BPRMeth_sum_weighted_bpr_grad", (DL_FUNC) &_BPRMeth_sum_weighted_bpr_grad, 6},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_BPRMeth(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }
