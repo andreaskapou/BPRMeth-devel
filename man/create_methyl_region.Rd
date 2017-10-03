@@ -6,6 +6,8 @@
 \alias{met_region}
 \alias{create_methyl_region}
 \alias{create_methyl_region_array}
+\alias{create_methyl_region_saar_levels}
+\alias{create_methyl_region_saar_eff}
 \title{Create methylation regions for each gene promoter.}
 \usage{
 create_methyl_region(bs_data, prom_region, cpg_density = 10,
@@ -13,6 +15,14 @@ create_methyl_region(bs_data, prom_region, cpg_density = 10,
   fmin = -1, fmax = 1)
 
 create_methyl_region_array(bs_data, prom_region, cpg_density = 10,
+  sd_thresh = 0.1, ignore_strand = TRUE, is_single_cell = FALSE,
+  fmin = -1, fmax = 1)
+
+create_methyl_region_saar_levels(bs_data, prom_region, cpg_density = 10,
+  sd_thresh = 0.1, ignore_strand = TRUE, is_single_cell = FALSE,
+  fmin = -1, fmax = 1)
+
+create_methyl_region_saar_eff(bs_data, prom_region, cpg_density = 10,
   sd_thresh = 0.1, ignore_strand = TRUE, is_single_cell = FALSE,
   fmin = -1, fmax = 1)
 }

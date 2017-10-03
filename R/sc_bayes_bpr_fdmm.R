@@ -63,7 +63,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
 
     # Initialize priors over the parameters
     if (is.null(w_0_mean)){ w_0_mean <- rep(0, M) }
-    if (is.null(w_0_cov)){ w_0_cov <- diag(3, M) }
+    if (is.null(w_0_cov)){ w_0_cov <- diag(5, M) }
 
     prec_0 <- solve(w_0_cov)          # Invert covariance matrix to get the precision matrix
     w_0_prec_0 <- prec_0 %*% w_0_mean # Compute product of prior mean and prior precision matrix
@@ -88,23 +88,10 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
 
     # Store mixing proportions draws
     pi_draws <- matrix(NA_real_, nrow = gibbs_nsim, ncol = K)
-    pi_draws[1, ] <- pi_k
-
     # Store BPR coefficient draws
     w_draws <- array(data = 0, dim = c(gibbs_nsim - gibbs_burn_in, N, M , K))
-    # TODO: Initialize w in a sensible way
-    if (is.null(w)){
-        # ww <- array(data = 0, dim = c(N, M, I))
-        # for (i in 1:I){
-        #     cov_prom <- which(!is.na(x[[i]]))
-        #     # Compute regression coefficients using MLE
-        #     ww[cov_prom, ,i] <- bpr_optim(x = x[[i]][cov_prom], w = NULL, basis = basis, fit_feature = NULL, cpg_dens_feat = FALSE,
-        #                           lambda = lambda, opt_itnmax = 20, is_parallel = TRUE, no_cores = 2)$W_opt
-        # }
-        # w <- array(data = ww[, ,sample(I, K)], dim = c(N, M, K))
-        w <- array(data = 0, dim = c(N, M, K))
-    }
 
+    # Create design matrices
     ind <- list()     # Keep a list of promoter regions with CpG coverage
     des_mat <- list() # Create design matrix for each cell for each promoter region
     for (i in 1:I){
@@ -123,6 +110,29 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
         parallel::stopCluster(cl)
         doParallel::stopImplicitCluster()
     }
+
+    # TODO: Initialize w in a sensible way via mini EM
+    if (is.null(w)){
+        # Perform checks for initial parameter values
+        out <- .do_scEM_checks(x = x, H = des_mat, reg_ind = ind, K = K, pi_k = NULL, w = w,
+                               basis = basis, lambda = lambda, em_init_nstart = 5,
+                               em_init_max_iter = 20, opt_itnmax = 30,
+                               init_opt_itnmax = 50, is_parallel = is_parallel,
+                               no_cores = no_cores, is_verbose = FALSE)
+        w <- out$w
+        pi_k <- out$pi_k
+
+        # ww <- array(data = 0, dim = c(N, M, I))
+        # for (i in 1:I){
+        #     cov_prom <- which(!is.na(x[[i]]))
+        #     # Compute regression coefficients using MLE
+        #     ww[cov_prom, ,i] <- bpr_optim(x = x[[i]][cov_prom], w = NULL, basis = basis, fit_feature = NULL, cpg_dens_feat = FALSE,
+        #                           lambda = lambda, opt_itnmax = 20, is_parallel = TRUE, no_cores = 2)$W_opt
+        # }
+        # w <- array(data = ww[, ,sample(I, K)], dim = c(N, M, K))
+        # w <- array(data = 0, dim = c(N, M, K))
+    }
+    pi_draws[1, ] <- pi_k
 
     message("Starting Gibbs sampling...")
     # Show progress bar
@@ -170,7 +180,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
         ## -------------------------------------------------------------------
         # Update mixing proportions using updated cluster component counts
         Ci_k <- colSums(C)
-        if (is_verbose) print(Ci_k)
+        if (is_verbose) {cat("\r", Ci_k) }
         pi_k <- as.vector(rdirichlet(n = 1, alpha = dir_a + Ci_k))
         pi_draws[t, ] <- pi_k
 

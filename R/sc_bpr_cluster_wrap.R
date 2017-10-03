@@ -46,9 +46,12 @@
 #'
 #' @importFrom utils txtProgressBar setTxtProgressBar
 #' @export
-sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL, lambda = 1/8, em_max_iter = 100,
-                                epsilon_conv = 1e-05, use_kmeans = TRUE, em_init_nstart = 10, em_init_max_iter = 10, opt_method = "CG",
-                                opt_itnmax = 50, init_opt_itnmax = 100, is_parallel = TRUE, no_cores = NULL, is_verbose = TRUE){
+sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL,
+                                lambda = 1/8, em_max_iter = 100, epsilon_conv = 1e-05,
+                                use_kmeans = TRUE, em_init_nstart = 10,
+                                em_init_max_iter = 10, opt_method = "CG", opt_itnmax = 50,
+                                init_opt_itnmax = 100, is_parallel = TRUE,
+                                no_cores = NULL, is_verbose = TRUE){
 
     # Check that x is a list object
     assertthat::assert_that(is.list(x))
@@ -97,10 +100,12 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL, l
     # Apply EM algorithm to cluster similar cells based on methylation profiles
     message("Running mini EM ...\n")
     # Perform checks for initial parameter values
-    out <- .do_scEM_checks(x = x, H = H, reg_ind = ind, K = K, pi_k = pi_k, w = w, basis = basis, lambda = lambda,
-                           em_init_nstart = em_init_nstart, em_init_max_iter = em_init_max_iter,
-                           epsilon_conv = epsilon_conv, opt_method = opt_method, opt_itnmax = opt_itnmax,
-                           init_opt_itnmax = init_opt_itnmax, is_parallel = is_parallel, no_cores = no_cores,
+    out <- .do_scEM_checks(x = x, H = H, reg_ind = ind, K = K, pi_k = pi_k, w = w,
+                           basis = basis, lambda = lambda, em_init_nstart = em_init_nstart,
+                           em_init_max_iter = em_init_max_iter, epsilon_conv = epsilon_conv,
+                           opt_method = opt_method, opt_itnmax = opt_itnmax,
+                           init_opt_itnmax = init_opt_itnmax,
+                           is_parallel = is_parallel, no_cores = no_cores,
                            is_verbose = is_verbose)
 
     w    <- out$w        # Initial weights for each cluster and cell region
@@ -109,10 +114,12 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL, l
 
     # Apply EM algorithm to cluster similar cells based on methylation profiles
     message("Clustering cells based on methylation profiles via EM ...\n")
-
-    scbpr_cluster <- .scbpr_EM(x = x, H = H, reg_ind = ind, K = K, pi_k = pi_k, w = w, basis = basis, lambda = lambda,
-                               em_max_iter = em_max_iter, epsilon_conv = epsilon_conv, opt_method = opt_method,
-                               opt_itnmax = opt_itnmax, is_parallel = is_parallel, no_cores = no_cores, is_verbose = is_verbose)
+    scbpr_cluster <- .scbpr_EM(x = x, H = H, reg_ind = ind, K = K, pi_k = pi_k,
+                               w = w, basis = basis, lambda = lambda,
+                               em_max_iter = em_max_iter, epsilon_conv = epsilon_conv,
+                               opt_method = opt_method, opt_itnmax = opt_itnmax,
+                               is_parallel = is_parallel, no_cores = no_cores,
+                               is_verbose = is_verbose)
     message("Finished clustering!\n\n")
 
     # Add names to the estimated parameters for clarity
@@ -142,8 +149,10 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL, l
 #'
 #' EM algorithm
 #'
-.scbpr_EM <- function(x, H, reg_ind, K = 2, pi_k, w, basis, lambda = 1/6, em_max_iter = 100, epsilon_conv = 1e-05,
-                      opt_method = "CG", opt_itnmax = 50, is_parallel = TRUE, no_cores = NULL, is_verbose = FALSE){
+.scbpr_EM <- function(x, H, reg_ind, K = 2, pi_k, w, basis, lambda = 1/6,
+                      em_max_iter = 100, epsilon_conv = 1e-05, opt_method = "CG",
+                      opt_itnmax = 50, is_parallel = TRUE, no_cores = NULL,
+                      is_verbose = FALSE){
 
     I <- length(x)      # Number of cells
     N <- length(x[[1]]) # Number of regions
@@ -154,7 +163,7 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL, l
     # Matrices / Lists for storing results
     w_pdf     <- matrix(0, nrow = I, ncol = K)  # Store weighted PDFs
     post_prob <- matrix(0, nrow = I, ncol = K)  # Hold responsibilities
-    w_tmp <- array(data = 0, dim = c(N, M, K))
+    w_tmp     <- array(data = 0, dim = c(N, M, K))
 
     # Run EM algorithm until convergence
     for (t in 1:em_max_iter){
@@ -232,7 +241,7 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL, l
         }
 
         if (is_verbose){
-            cat("It:\t", t, "\tNLL:\t", NLL[t + 1], "\tNLL_diff:\t", NLL[t] - NLL[t + 1], "\n")
+            cat("\r", "It:\t", t, "\tNLL:\t", NLL[t + 1], "\tNLL_diff:\t", NLL[t] - NLL[t + 1])
         }
         if (NLL[t + 1] > NLL[t]){
             message("Negative Log Likelihood increases - Stopping EM!\n")
@@ -247,8 +256,9 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL, l
         warning("EM did not converge with the given maximum iterations!\n")
     }
 
-    obj <- structure(list(K = K, N = N, w = w, pi_k = pi_k, lambda = lambda, em_max_iter = em_max_iter,
-                          opt_method = opt_method, opt_itnmax = opt_itnmax, NLL = NLL,
+    obj <- structure(list(K = K, N = N, w = w, pi_k = pi_k, lambda = lambda,
+                          em_max_iter = em_max_iter, opt_method = opt_method,
+                          opt_itnmax = opt_itnmax, NLL = NLL,
                           basis = basis, post_prob = post_prob),
                      class = "scbpr_EM")
     return(obj)
@@ -278,9 +288,11 @@ optim_regions <- function(x, H, w, K, opt_method = opt_method, opt_itnmax, post_
 }
 
 # Internal function to make all the appropriate type checks.
-.do_scEM_checks <- function(x, H, reg_ind, K, pi_k = NULL, w = NULL, basis, lambda = 1/6, use_kmeans = TRUE, em_init_nstart = 10,
-                            em_init_max_iter = 10, epsilon_conv = 1e-05, opt_method = "CG", opt_itnmax = 50,
-                            init_opt_itnmax = 100, is_parallel = TRUE, no_cores = NULL, is_verbose = TRUE){
+.do_scEM_checks <- function(x, H, reg_ind, K, pi_k = NULL, w = NULL, basis,
+                            lambda = 1/6, use_kmeans = TRUE, em_init_nstart = 10,
+                            em_init_max_iter = 10, epsilon_conv = 1e-05,
+                            opt_method = "CG", opt_itnmax = 50, init_opt_itnmax = 100,
+                            is_parallel = TRUE, no_cores = NULL, is_verbose = TRUE){
     I <- length(x)
     N <- length(x[[1]])
     M <- basis$M + 1
@@ -311,7 +323,7 @@ optim_regions <- function(x, H, w, K, opt_method = opt_method, opt_itnmax, post_
         for (t in 1:em_init_nstart){
             if (use_kmeans){
                 # Use Kmeans with random starts
-                cl <- stats::kmeans(W_opt, K, nstart = 25)
+                cl <- stats::kmeans(W_opt, K, nstart = 1)
                 # Get the mixture components
                 C_n <- cl$cluster
                 # TODO: Check that k-means does not return empty clusters..
@@ -321,15 +333,20 @@ optim_regions <- function(x, H, w, K, opt_method = opt_method, opt_itnmax, post_
                 if (is.null(pi_k)){ pi_k <- as.vector(table(C_n) / I ) }
             }else{
                 w <- array(data = ww[, ,sample(I, K)], dim = c(N, M, K))
+                if (is.null(pi_k)){ pi_k <- rep(1/K, K) }
             }
             # Run mini EM
-            em <- .scbpr_EM(x = x, H = H, reg_ind = reg_ind, K = K, pi_k = pi_k, w = w, basis = basis, lambda = lambda,
-                            em_max_iter = em_init_max_iter, epsilon_conv = epsilon_conv, opt_method = opt_method,
-                            opt_itnmax = opt_itnmax, is_parallel = is_parallel, no_cores = no_cores, is_verbose = is_verbose)
+            em <- .scbpr_EM(x = x, H = H, reg_ind = reg_ind, K = K, pi_k = pi_k,
+                            w = w, basis = basis, lambda = lambda,
+                            em_max_iter = em_init_max_iter, epsilon_conv = epsilon_conv,
+                            opt_method = opt_method,
+                            opt_itnmax = opt_itnmax, is_parallel = is_parallel,
+                            no_cores = no_cores, is_verbose = is_verbose)
 
             # Check if NLL is lower and keep the optimal params
             NLL_cur <- utils::tail(em$NLL, n = 1)
             if (NLL_cur < NLL_prev){
+                # TODO:: Store optimal pi_k from EM
                 optimal_w <- w
                 optimal_pi_k <- pi_k
                 NLL_prev <- NLL_cur

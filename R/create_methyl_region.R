@@ -309,9 +309,9 @@ create_methyl_region_array <- function(bs_data, prom_region, cpg_density = 10,
             fmin = fmin,
             fmax = fmax), 4)
 
-          # Store total reads in the corresponding locations
+          # Store beta values in the corresponding locations
           meth_data[[id]][, 2] <- beta[cpg_ind][Order]
-          # Store methylated reads in the corresponding locations
+          # Store mu values in the corresponding locations
           meth_data[[id]][, 3] <- m[cpg_ind][Order]
         }
       }
@@ -325,6 +325,254 @@ create_methyl_region_array <- function(bs_data, prom_region, cpg_density = 10,
   return(meth_data)
 }
 
+
+#' @rdname create_methyl_region
+#'
+#' @importFrom methods is
+#' @export
+create_methyl_region_saar_levels <- function(bs_data, prom_region, cpg_density = 10,
+                                             sd_thresh = 10e-02, ignore_strand = TRUE,
+                                             is_single_cell = FALSE, fmin = -1, fmax = 1){
+
+  message("Creating methylation regions ...")
+  assertthat::assert_that(methods::is(bs_data, "GRanges"))
+  assertthat::assert_that(methods::is(prom_region, "GRanges"))
+
+  # Find overlaps between promoter regions and BS-Seq data -------
+  overlaps <- GenomicRanges::findOverlaps(query   = prom_region,
+                                          subject = bs_data,
+                                          ignore.strand = ignore_strand)
+  if (length(overlaps) < 2){
+    stop("Not enough matches between the BS-Seq and RNA-Seq data.")
+  }
+
+  # Convert data in vector format for faster lookup --------------
+  query_hits <- S4Vectors::queryHits(overlaps)
+  subj_hits  <- S4Vectors::subjectHits(overlaps)
+
+  prom_loc   <- unique(query_hits)     # Indices of promoter locations
+  tss_loc    <- prom_region$tss        # TSS locations
+  prom_id    <- prom_region$id         # (Ensembl) IDs
+  tss_strand <- as.character(GenomicRanges::strand(prom_region))
+  cpg_loc    <- GenomicRanges::ranges(bs_data)@start  # CpG locations
+  mm         <- bs_data$mm             # Methylated reads
+  toth       <- bs_data$toth           # Hydroxy reads
+  um         <- bs_data$um             # Hemi-methylated reads
+  uu         <- bs_data$uu             # Unmethylated reads
+  D          <- 5
+
+  # Extract upstream and downstream lengths in bps
+  width          <- GenomicRanges::ranges(prom_region)@width[1]
+  if (identical(tss_strand[1], "+")){
+    upstream   <- GenomicRanges::ranges(prom_region)@start[1] - tss_loc[1]
+    downstream <- width + upstream - 1
+  }else if (identical(tss_strand[1], "-")){
+    downstream <- abs(GenomicRanges::ranges(prom_region)@start[1] -
+                        tss_loc[1])
+    upstream   <- downstream - width + 1
+  }else{
+    upstream     <- GenomicRanges::ranges(prom_region)@start[1] - tss_loc[1]
+    downstream   <- width + upstream - 1
+  }
+
+  # Initialize variables -----------------------------------------
+  meth_data <- list()
+  for (j in 1:length(prom_id)){
+    meth_data[[prom_id[j]]] <- NA           # Initilize list to NA
+  }
+  LABEL        <- FALSE                     # Flag variable
+  prom_counter <- 0                         # Promoter counter
+  cpg_ind      <- vector(mode = "integer")  # Vector of CpG indices
+  cpg_ind      <- c(cpg_ind, subj_hits[1])  # Add the first subject hit
+
+  total_iter <- NROW(query_hits)
+  for (i in 2:total_iter){
+    # If query hits is the same as the previous one
+    if (query_hits[i] == query_hits[i - 1]){
+      cpg_ind <- c(cpg_ind, subj_hits[i])  # Add subject hit
+      # In case we have the last region
+      if (i == total_iter){
+        prom_counter <- prom_counter + 1  # Increase promoter counter
+        LABEL <- TRUE
+      }
+    }else{
+      prom_counter <- prom_counter + 1  # Increase promoter counter
+      LABEL <- TRUE
+    }
+
+    if (LABEL){
+      # TSS location for promoter 'promCount'
+      id <- prom_id[prom_loc[prom_counter]]
+      # Only keep regions that have more than 'n' CpGs
+      if (length(cpg_ind) > cpg_density){
+        # If sd of the methylation level is above threshold
+        obs_var <- stats::sd(mm[cpg_ind])
+        if (obs_var > sd_thresh){
+          # Locations of CpGs in the genome
+          region <- cpg_loc[cpg_ind]
+          # TSS location for promoter 'promCount'
+          tss <- tss_loc[prom_loc[prom_counter]]
+          # Extract strand information, i.e. direction
+          strand_direction <- tss_strand[prom_loc[prom_counter]]
+          # Shift CpG locations relative to TSS
+          center_data  <- .center_loc(region = region,
+                                      tss = tss,
+                                      strand_direction = strand_direction)
+          # In the "-" strand the order of the locations should change
+          Order <- base::order(center_data)
+
+          meth_data[[id]] <- matrix(0, nrow = length(cpg_ind), ncol = D)
+
+          # Store normalized locations of methylated CpGs
+          meth_data[[id]][, 1] <- round(.minmax_scaling(
+            data = center_data[Order],
+            xmin = upstream,
+            xmax = downstream,
+            fmin = fmin,
+            fmax = fmax), 4)
+
+          # Store methylated in the corresponding locations
+          meth_data[[id]][, 2] <- mm[cpg_ind][Order]
+          # Store hydroxy in the corresponding locations
+          meth_data[[id]][, 3] <- toth[cpg_ind][Order]
+          # Store hemi-methylated in the corresponding locations
+          meth_data[[id]][, 4] <- um[cpg_ind][Order]
+          # Store unmethylated in the corresponding locations
+          meth_data[[id]][, 5] <- uu[cpg_ind][Order]
+        }
+      }
+      LABEL   <- FALSE
+      cpg_ind <- vector(mode = "integer")
+      cpg_ind <- c(cpg_ind, subj_hits[i])
+    }
+  }
+
+  message("Done!\n")
+  return(meth_data)
+}
+
+
+#' @rdname create_methyl_region
+#'
+#' @importFrom methods is
+#' @export
+create_methyl_region_saar_eff <- function(bs_data, prom_region, cpg_density = 10,
+                                          sd_thresh = 10e-02, ignore_strand = TRUE,
+                                          is_single_cell = FALSE, fmin = -1, fmax = 1){
+
+    message("Creating methylation regions ...")
+    assertthat::assert_that(methods::is(bs_data, "GRanges"))
+    assertthat::assert_that(methods::is(prom_region, "GRanges"))
+
+    # Find overlaps between promoter regions and BS-Seq data -------
+    overlaps <- GenomicRanges::findOverlaps(query   = prom_region,
+                                            subject = bs_data,
+                                            ignore.strand = ignore_strand)
+    if (length(overlaps) < 2){
+        stop("Not enough matches between the BS-Seq and RNA-Seq data.")
+    }
+
+    # Convert data in vector format for faster lookup --------------
+    query_hits <- S4Vectors::queryHits(overlaps)
+    subj_hits  <- S4Vectors::subjectHits(overlaps)
+
+    prom_loc   <- unique(query_hits)     # Indices of promoter locations
+    tss_loc    <- prom_region$tss        # TSS locations
+    prom_id    <- prom_region$id         # (Ensembl) IDs
+    tss_strand <- as.character(GenomicRanges::strand(prom_region))
+    cpg_loc    <- GenomicRanges::ranges(bs_data)@start  # CpG locations
+    maint      <- bs_data$maint          # Methylated reads
+    denovo     <- bs_data$denovo         # Hydroxy reads
+    hydroxy    <- bs_data$hydroxy        # Hemi-methylated reads
+    D          <- 4
+
+    # Extract upstream and downstream lengths in bps
+    width          <- GenomicRanges::ranges(prom_region)@width[1]
+    if (identical(tss_strand[1], "+")){
+        upstream   <- GenomicRanges::ranges(prom_region)@start[1] - tss_loc[1]
+        downstream <- width + upstream - 1
+    }else if (identical(tss_strand[1], "-")){
+        downstream <- abs(GenomicRanges::ranges(prom_region)@start[1] -
+                              tss_loc[1])
+        upstream   <- downstream - width + 1
+    }else{
+        upstream     <- GenomicRanges::ranges(prom_region)@start[1] - tss_loc[1]
+        downstream   <- width + upstream - 1
+    }
+
+    # Initialize variables -----------------------------------------
+    meth_data <- list()
+    for (j in 1:length(prom_id)){
+        meth_data[[prom_id[j]]] <- NA           # Initilize list to NA
+    }
+    LABEL        <- FALSE                     # Flag variable
+    prom_counter <- 0                         # Promoter counter
+    cpg_ind      <- vector(mode = "integer")  # Vector of CpG indices
+    cpg_ind      <- c(cpg_ind, subj_hits[1])  # Add the first subject hit
+
+    total_iter <- NROW(query_hits)
+    for (i in 2:total_iter){
+        # If query hits is the same as the previous one
+        if (query_hits[i] == query_hits[i - 1]){
+            cpg_ind <- c(cpg_ind, subj_hits[i])  # Add subject hit
+            # In case we have the last region
+            if (i == total_iter){
+                prom_counter <- prom_counter + 1  # Increase promoter counter
+                LABEL <- TRUE
+            }
+        }else{
+            prom_counter <- prom_counter + 1  # Increase promoter counter
+            LABEL <- TRUE
+        }
+
+        if (LABEL){
+            # TSS location for promoter 'promCount'
+            id <- prom_id[prom_loc[prom_counter]]
+            # Only keep regions that have more than 'n' CpGs
+            if (length(cpg_ind) > cpg_density){
+                # If sd of the methylation level is above threshold
+                obs_var <- stats::sd(maint[cpg_ind])
+                if (obs_var > sd_thresh){
+                    # Locations of CpGs in the genome
+                    region <- cpg_loc[cpg_ind]
+                    # TSS location for promoter 'promCount'
+                    tss <- tss_loc[prom_loc[prom_counter]]
+                    # Extract strand information, i.e. direction
+                    strand_direction <- tss_strand[prom_loc[prom_counter]]
+                    # Shift CpG locations relative to TSS
+                    center_data  <- .center_loc(region = region,
+                                                tss = tss,
+                                                strand_direction = strand_direction)
+                    # In the "-" strand the order of the locations should change
+                    Order <- base::order(center_data)
+
+                    meth_data[[id]] <- matrix(0, nrow = length(cpg_ind), ncol = D)
+
+                    # Store normalized locations of methylated CpGs
+                    meth_data[[id]][, 1] <- round(.minmax_scaling(
+                        data = center_data[Order],
+                        xmin = upstream,
+                        xmax = downstream,
+                        fmin = fmin,
+                        fmax = fmax), 4)
+
+                    # Store maintentance efficiencies
+                    meth_data[[id]][, 2] <- maint[cpg_ind][Order]
+                    # Store de novo efficiencies
+                    meth_data[[id]][, 3] <- denovo[cpg_ind][Order]
+                    # Store hydroxy efficiencies
+                    meth_data[[id]][, 4] <- hydroxy[cpg_ind][Order]
+                }
+            }
+            LABEL   <- FALSE
+            cpg_ind <- vector(mode = "integer")
+            cpg_ind <- c(cpg_ind, subj_hits[i])
+        }
+    }
+
+    message("Done!\n")
+    return(meth_data)
+}
 
 
 # Center CpG locations relative to TSS

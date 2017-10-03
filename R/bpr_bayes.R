@@ -110,11 +110,11 @@ bpr_bayes.list <- function(x, w_mle = NULL, basis = NULL, fit_feature = NULL,
         }
     }
     if (is.null(w_0_cov)){
-        w_0_cov <- diag(2, M)
+        w_0_cov <- diag(4, M)
     }else{
         if (NROW(w_0_cov) != M){
             message("Initializing prior mean due to length differences.")
-            w_0_cov <- diag(2, M)
+            w_0_cov <- diag(4, M)
         }
     }
 
