@@ -5,10 +5,10 @@
 \title{Gibbs sampling algorithm for sc-Bayesian BPR finite mixture model}
 \usage{
 sc_bayes_bpr_fdmm(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NULL,
-  w_0_mean = NULL, w_0_cov = NULL, dir_a = rep(15, K), lambda = 1/2,
+  w_0_mean = NULL, w_0_cov = NULL, dir_a = rep(1, K), lambda = 1/2,
   gibbs_nsim = 5000, gibbs_burn_in = 1000, inner_gibbs = FALSE,
   gibbs_inner_nsim = 50, is_parallel = TRUE, no_cores = NULL,
-  is_verbose = TRUE)
+  is_verbose = FALSE)
 }
 \arguments{
 \item{x}{A list of length I, where I are the total number of cells. Each

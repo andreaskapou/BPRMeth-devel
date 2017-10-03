@@ -8,7 +8,7 @@ sc_bpr_cluster_wrap(x, K = 2, pi_k = NULL, w = NULL, basis = NULL,
   lambda = 1/8, em_max_iter = 100, epsilon_conv = 1e-05,
   use_kmeans = TRUE, em_init_nstart = 10, em_init_max_iter = 10,
   opt_method = "CG", opt_itnmax = 50, init_opt_itnmax = 100,
-  is_parallel = TRUE, no_cores = NULL, is_verbose = TRUE)
+  is_parallel = TRUE, no_cores = NULL, is_verbose = FALSE)
 }
 \arguments{
 \item{x}{A list of length I, where I are the total number of cells. Each

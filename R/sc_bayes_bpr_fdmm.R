@@ -36,8 +36,8 @@
 #' @importFrom utils txtProgressBar setTxtProgressBar
 #' @export
 sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NULL, w_0_mean = NULL, w_0_cov = NULL,
-                              dir_a = rep(15, K), lambda = 1/2, gibbs_nsim = 5000, gibbs_burn_in = 1000,
-                              inner_gibbs = FALSE, gibbs_inner_nsim = 50, is_parallel = TRUE, no_cores = NULL, is_verbose = TRUE){
+                              dir_a = rep(1, K), lambda = 1/2, gibbs_nsim = 5000, gibbs_burn_in = 1000,
+                              inner_gibbs = FALSE, gibbs_inner_nsim = 50, is_parallel = TRUE, no_cores = NULL, is_verbose = FALSE){
 
     # Check that x is a list object
     assertthat::assert_that(is.list(x))
@@ -63,7 +63,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
 
     # Initialize priors over the parameters
     if (is.null(w_0_mean)){ w_0_mean <- rep(0, M) }
-    if (is.null(w_0_cov)){ w_0_cov <- diag(5, M) }
+    if (is.null(w_0_cov)){ w_0_cov <- diag(4, M) }
 
     prec_0 <- solve(w_0_cov)          # Invert covariance matrix to get the precision matrix
     w_0_prec_0 <- prec_0 %*% w_0_mean # Compute product of prior mean and prior precision matrix
@@ -134,7 +134,7 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
     }
     pi_draws[1, ] <- pi_k
 
-    message("Starting Gibbs sampling...")
+    if (is_verbose) { message("Starting Gibbs sampling...") }
     # Show progress bar
     pb <- txtProgressBar(min = 1, max = gibbs_nsim, style = 3)
     ##---------------------------------
@@ -191,13 +191,13 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
             C_idx <- which(C[, k] == 1)
             # TODO: Handle cases when we have empty clusters...
             if (length(C_idx) == 0){
-                message("Warning: Empty cluster...")
+                if (is_verbose) { message("Warning: Empty cluster...") }
                 empty_C[k] <- 1
                 next
             }
             # Check if current clusters ids are not equal to previous ones
             if (!identical(C[, k], C_prev[, k])){
-                message(t, ": Not identical in cluster ", k)
+                if (is_verbose) { message(t, ": Not identical in cluster ", k) }
                 # Iterate over each promoter region
                 for (n in 1:N){
                     # Initialize empty vector for observed methylation data
@@ -323,10 +323,10 @@ sc_bayes_bpr_fdmm <- function(x, K = 2, pi_k = rep(1/K, K), w = NULL, basis = NU
         setTxtProgressBar(pb,t)
     }
     close(pb)
-    message("Finished Gibbs sampling...")
+    if (is_verbose) { message("Finished Gibbs sampling...") }
 
     ##-----------------------------------------------
-    message("Computing summary statistics...")
+    if (is_verbose) { message("Computing summary statistics...") }
     # Compute summary statistics from Gibbs simulation
     if (K == 1){ pi_post <- mean(pi_draws[gibbs_burn_in:gibbs_nsim, ]) }
     else{ pi_post <- colMeans(pi_draws[gibbs_burn_in:gibbs_nsim, ]) }

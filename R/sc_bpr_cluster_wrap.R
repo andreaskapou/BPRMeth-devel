@@ -51,7 +51,7 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL,
                                 use_kmeans = TRUE, em_init_nstart = 10,
                                 em_init_max_iter = 10, opt_method = "CG", opt_itnmax = 50,
                                 init_opt_itnmax = 100, is_parallel = TRUE,
-                                no_cores = NULL, is_verbose = TRUE){
+                                no_cores = NULL, is_verbose = FALSE){
 
     # Check that x is a list object
     assertthat::assert_that(is.list(x))
@@ -98,7 +98,7 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL,
     }
 
     # Apply EM algorithm to cluster similar cells based on methylation profiles
-    message("Running mini EM ...\n")
+    if (is_verbose) { message("Running mini EM ...\n") }
     # Perform checks for initial parameter values
     out <- .do_scEM_checks(x = x, H = H, reg_ind = ind, K = K, pi_k = pi_k, w = w,
                            basis = basis, lambda = lambda, em_init_nstart = em_init_nstart,
@@ -113,14 +113,14 @@ sc_bpr_cluster_wrap <- function(x, K = 2, pi_k = NULL, w = NULL, basis = NULL,
     M    <- basis$M + 1  # Number of coefficient parameters
 
     # Apply EM algorithm to cluster similar cells based on methylation profiles
-    message("Clustering cells based on methylation profiles via EM ...\n")
+    if (is_verbose) { message("Clustering cells based on methylation profiles via EM ...\n") }
     scbpr_cluster <- .scbpr_EM(x = x, H = H, reg_ind = ind, K = K, pi_k = pi_k,
                                w = w, basis = basis, lambda = lambda,
                                em_max_iter = em_max_iter, epsilon_conv = epsilon_conv,
                                opt_method = opt_method, opt_itnmax = opt_itnmax,
                                is_parallel = is_parallel, no_cores = no_cores,
                                is_verbose = is_verbose)
-    message("Finished clustering!\n\n")
+    if (is_verbose) { message("Finished clustering!\n\n") }
 
     # Add names to the estimated parameters for clarity
     names(scbpr_cluster$pi_k) <- paste0("clust", 1:K)
