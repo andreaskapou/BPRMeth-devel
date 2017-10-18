@@ -22,7 +22,7 @@
 #'   equally spaced on the whole region, or between the min and max of the
 #'   observation values.
 #'
-#' @return A basis object of class 'rbf' or 'polynomial'.
+#' @return A basis object of class 'rbf', 'polynomial' or 'fourier'.
 #'
 #' @author C.A.Kapourani \email{C.A.Kapourani@@ed.ac.uk}
 #'
