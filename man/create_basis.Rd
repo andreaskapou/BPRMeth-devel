@@ -36,7 +36,7 @@ specific interval. Best choice is the Range of the points used for
 regression.}
 }
 \value{
-A basis object of class 'rbf' or 'polynomial'.
+A basis object of class 'rbf', 'polynomial' or 'fourier'.
 }
 \description{
 These functions create different basis objects. These objects

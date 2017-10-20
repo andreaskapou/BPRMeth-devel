@@ -323,6 +323,70 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
 }
 
 
+
+.bpr_EM_fast <- function(x, H, K = 2, pi_k = rep(1/K, K), w = NULL,
+                    em_max_iter = 100, epsilon_conv = 1e-05, lambda = 1/2,
+                    opt_method = "CG", opt_itnmax = 100, is_verbose = FALSE){
+
+  N <- length(x)  # Extract number of observations
+  weighted_pdf <- matrix(0, nrow = N, ncol = K) # Store weighted PDFs
+  NLL <- c(1e+40) # Initialize and store NLL for each EM iteration
+  # Run EM algorithm until convergence
+  for (t in 1:em_max_iter){
+    # E-Step -----------------------------------------------
+    for (k in 1:K){ # For each element in x, evaluate the BPR log likelihood
+      weighted_pdf[, k] <- vapply(X   = 1:N,
+                                  FUN = function(y)
+                                    bpr_likelihood(w = w[, k],
+                                                   H = H[[y]],
+                                                   data = x[[y]],
+                                                   lambda = lambda,
+                                                   is_NLL = FALSE),
+                                  FUN.VALUE = numeric(1),
+                                  USE.NAMES = FALSE)
+      weighted_pdf[, k] <- log(pi_k[k]) + weighted_pdf[, k]
+    }
+    # Calculate probs using the logSumExp trick for numerical stability
+    Z <- apply(weighted_pdf, 1, .log_sum_exp)
+    post_prob <- exp(weighted_pdf - Z) # Get responsibilities
+    NLL  <- c(NLL, (-1) * sum(Z))      # Evaluate and store the NLL
+
+    # M-Step -----------------------------------------------
+    #
+    N_k <- colSums(post_prob)  # Sum of posterior probabilities for each cluster
+    pi_k <- N_k / N            # Update mixing proportions for each cluster
+
+    # Update basis function coefficient vector w for each cluster k
+    for (k in 1:K){
+      w[, k] <- optim(par       = w[, k],
+                      fn        = sum_weighted_bpr_lik,
+                      gr        = sum_weighted_bpr_grad,
+                      method    = opt_method,
+                      control   = list(maxit = opt_itnmax),
+                      x         = x,
+                      des_mat   = H,
+                      post_prob = post_prob[, k],
+                      lambda    = lambda,
+                      is_NLL    = TRUE)$par
+    }
+    if (is_verbose){
+      cat("It:\t",t,"\tNLL:\t",NLL[t+1],"\tNLL_diff:\t", NLL[t]-NLL[t+1],"\n")
+    }
+    if (NLL[t + 1] > NLL[t]){
+      message("Negative Log Likelihood increases - Stopping EM!\n"); break
+    }
+    if (K == 1){ w <- as.matrix(w) }
+    # Check for convergence
+    if (NLL[t] - NLL[t + 1] < epsilon_conv){ break }
+  }
+  # Store the object
+  obj <- structure(list(w=w,pi_k=pi_k,post_prob=post_prob,NLL=NLL[length(NLL)]), class="bpr_EM_fast")
+  return(obj)
+}
+
+
+
+
 # Internal function to make all the appropriate type checks.
 .do_EM_checks <- function(x, K = 2, pi_k,  w, basis, lambda = 1/2,
                           opt_method = "CG", init_opt_itnmax = 100,
