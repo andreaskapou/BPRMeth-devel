@@ -323,8 +323,24 @@ bpr_cluster_wrap <- function(x, K = 3, pi_k = NULL, w = NULL, basis = NULL,
 }
 
 
-
-.bpr_EM_fast <- function(x, H, K = 2, pi_k = rep(1/K, K), w = NULL,
+#' @title Cluster methylation profiles fast method
+#'
+#' @description Efficient implementation for clustering methylation profiles
+#'   using the EM algorithm, given a design matrix H.
+#'
+#' @param x Observations, stored in a list object.
+#' @param H The design matrix H
+#' @param K Integer denoting the number of clusters K.
+#' @param pi_k Vector of length K, denoting the mixing proportions.
+#' @param w A MxK matrix, where each column consists of the basis function
+#'   coefficients for each corresponding cluster.
+#' @param em_max_iter Integer denoting the maximum number of EM iterations.
+#' @param epsilon_conv Numeric denoting the convergence parameter for EM.
+#' @param is_verbose Logical, print results during EM iterations.
+#' @inheritParams bpr_optimize
+#'
+#' @export
+bpr_EM_fast <- function(x, H, K = 2, pi_k = rep(1/K, K), w = NULL,
                     em_max_iter = 100, epsilon_conv = 1e-05, lambda = 1/2,
                     opt_method = "CG", opt_itnmax = 100, is_verbose = FALSE){
 
