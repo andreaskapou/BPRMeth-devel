@@ -276,7 +276,7 @@ bpr_optim_fast <- function(x, H, w = NULL, lambda = 1/6, opt_method = "CG",
 
     assertthat::assert_that(is.list(x)) # Check that x is a list object
     N <- length(x)                      # Extract number of observations
-    if(is.null(w)){ w <- rep(0.5, NCOL(H)) }
+    if(is.null(w)){ w <- rep(0.5, NCOL(H[[1]])) }
 
     # Initialize so the CMD check on R passes without NOTES
     i <- 0
